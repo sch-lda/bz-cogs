@@ -182,17 +182,6 @@ class MessagesList:
                 await self.add_msg(past_messages[i])
                 break
 
-        if users and not (await self.config.guild(self.guild).optin_disable_embed()):
-            prefix = (await self.bot.get_prefix(message))[0]
-            users = ", ".join([user.mention for user in users])
-            embed = discord.Embed(
-                title=":information_source: AI User Opt-In / Opt-Out",
-                color=await self.bot.get_embed_color(message),
-            )
-            view = OptView(self.config)
-            embed.description = f"Hey there, looks like {users} have not opted in or out of AI User! \n Please opt in/out of sending your messages/images to OpenAI/external party. \n This embed will stop showing up if all users chatting have opted in or out."
-            await message.channel.send(embed=embed, view=view)
-
     def get_json(self):
         result = []
         for message in self.messages:

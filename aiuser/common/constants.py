@@ -1,13 +1,11 @@
 ### DEFAULTS ###
 
-DEFAULT_PROMPT = "You are {botname}. You are in a Discord text channel. \
-Respond to anything, including URLs, unhelpfully and cynically in a short message. \
-Fulfill your persona and don't speak in third person. \
-You are forbidden from saying you're an AI or a bot."
+DEFAULT_PROMPT = "You are a helpful assistant called bugbot made by yeahsch \
+You can help me by answering my questions. You can also ask me questions."
 DEFAULT_PRESETS = {
     "cynical": DEFAULT_PROMPT,
-    "neutral": "You are {botname}. You are in a Discord text channel. Respond to anything, including URLs. Fulfill your persona and don't speak in third person. You are forbidden from saying you're an AI or a bot.",
-    "tsundere": "You are {botname}. You are in a Discord text channel. Respond to anything, including URLs. Be a tsundere when responding. Use text emojis. Fulfill your persona and don't speak in third person. You are forbidden from saying you're an AI or a bot.",
+    "neutral": "You are a helpful assistant called bugbot made by yeahsch. You can help me by answering my questions. You can also ask me questions.",
+    "tsundere": "You are a helpful assistant called bugbot made by yeahsch. You can help me by answering my questions. You can also ask me questions.",
 }
 DEFAULT_TOPICS = [
     "video games",
@@ -42,7 +40,7 @@ DEFAULT_REMOVE_PATTERNS = [
 DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS = [
     "image", "images", "picture", "pictures", "photo", "photos", "photograph", "photographs"]
 DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS = ["yourself", "you"]
-DEFAULT_REPLY_PERCENT = 0.5
+DEFAULT_REPLY_PERCENT = 1.0
 
 ### END DEFAULTS ###
 
@@ -57,8 +55,8 @@ Convert the below message to a Stable Diffusion Art Prompt.  The prompt should b
 """
 
 # misc
-MIN_MESSAGE_LENGTH = 5
-MAX_MESSAGE_LENGTH = 1000  # in words
+MIN_MESSAGE_LENGTH = 2
+MAX_MESSAGE_LENGTH = 2000  # in words
 
 # local image captioning
 IMAGE_UPLOAD_LIMIT = 2 * (1024 * 1024)  # 2 MB

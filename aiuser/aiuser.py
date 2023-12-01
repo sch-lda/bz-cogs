@@ -158,7 +158,7 @@ class AIUser(
         *,
         text: app_commands.Range[str, MIN_MESSAGE_LENGTH, MAX_MESSAGE_LENGTH],
     ):
-        """Talk directly to this bot's AI. Ask it anything you want!"""
+        """与gpt-3.5-turbo交谈"""
         await inter.response.defer()
 
         ctx = await commands.Context.from_interaction(inter)
@@ -166,24 +166,24 @@ class AIUser(
 
         if not await self.is_common_valid_reply(ctx):
             return await ctx.send(
-                "You're not allowed to use this command here.", ephemeral=True
+                "您没有权限使用!请联系yeahsch", ephemeral=True
             )
 
         if not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
-            return await ctx.send("This command is not enabled.", ephemeral=True)
+            return await ctx.send("已被停用!请联系yeahsch", ephemeral=True)
 
         rate_limit_reset = datetime.strptime(
             await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"
         )
         if rate_limit_reset > datetime.now():
             return await ctx.send(
-                "The command is currently being ratelimited!", ephemeral=True
+                "触发速率限制!请联系yeahsch", ephemeral=True
             )
 
         try:
             await self.send_response(ctx)
         except:
-            await ctx.send(":warning: Error in generating response!", ephemeral=True)
+            await ctx.send(":生成回复失败!请联系yeahsch", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):

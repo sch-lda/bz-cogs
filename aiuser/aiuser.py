@@ -16,7 +16,7 @@ from aiuser.common.cache import Cache
 from aiuser.common.constants import (
     DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS,
     DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS, DEFAULT_PRESETS,
-    DEFAULT_REMOVE_PATTERNS, DEFAULT_REPLY_PERCENT, DEFAULT_TOPICS,
+    DEFAULT_RANDOM_PROMPTS, DEFAULT_REMOVE_PATTERNS, DEFAULT_REPLY_PERCENT,
     IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH)
 from aiuser.common.enums import ScanImageMode
 from aiuser.common.utilities import is_embed_valid, is_using_openai_endpoint
@@ -57,7 +57,7 @@ class AIUser(
             "optout": [],
             "optin": [],
             "ratelimit_reset": datetime(1990, 1, 1, 0, 1).strftime("%Y-%m-%d %H:%M:%S"),
-            "max_topic_length": 200,
+            "max_random_prompt_length": 200,
             "max_prompt_length": 200,
         }
 
@@ -83,7 +83,7 @@ class AIUser(
             "weights": None,
             "random_messages_enabled": False,
             "random_messages_percent": 0.012,
-            "random_messages_topics": DEFAULT_TOPICS,
+            "random_messages_prompts": DEFAULT_RANDOM_PROMPTS,
             "presets": json.dumps(DEFAULT_PRESETS),
             "image_requests": False,
             "image_requests_endpoint": None,
@@ -92,7 +92,11 @@ class AIUser(
             "image_requests_subject": "woman",
             "image_requests_reduced_llm_calls": False,
             "image_requests_trigger_words": DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS,
-            "image_requests_second_person_trigger_words": DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS
+            "image_requests_second_person_trigger_words": DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS,
+            "function_calling": False,
+            "function_calling_search": False,
+            "function_calling_weather": False,
+            "function_calling_default_location": [49.24966, -123.11934],
         }
         default_channel = {
             "custom_text_prompt": None,
@@ -121,12 +125,12 @@ class AIUser(
             self.reply_percent[guild_id] = config["reply_percent"]
             pattern = config["ignore_regex"]
 
-            self.ignore_regex[guild_id] = re.compile(
-                pattern) if pattern else None
+            self.ignore_regex[guild_id] = re.compile(pattern) if pattern else None
 
-        if logger.isEnabledFor(logging.DEBUG):  # development
-            self.override_prompt_start_time[744802856074346556] = datetime.utcnow(
-            )
+        if logger.isEnabledFor(logging.DEBUG):
+            # for development
+            test_guild = 744802856074346556
+            self.override_prompt_start_time[test_guild] = datetime.now()
 
         self.random_message_trigger.start()
 
@@ -168,8 +172,9 @@ class AIUser(
             return await ctx.send(
                 "您没有权限使用!请联系yeahsch", ephemeral=True
             )
-
-        if not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
+        elif self.reply_percent.get(ctx.guild.id) == 1.0:
+            pass
+        elif not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
             return await ctx.send("已被停用!请联系yeahsch", ephemeral=True)
 
         rate_limit_reset = datetime.strptime(
@@ -199,17 +204,12 @@ class AIUser(
         ):
             return
 
-        rate_limit_reset = datetime.strptime(
-            await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"
-        )
+        rate_limit_reset = datetime.strptime(await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S")
         if rate_limit_reset > datetime.now():
-            logger.debug(
-                f"Want to respond but ratelimited until {rate_limit_reset.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
+            logger.debug(f"Want to respond but ratelimited until {rate_limit_reset.strftime('%Y-%m-%d %H:%M:%S')}")
             if (
                 await self.is_bot_mentioned_or_replied(message)
-                or self.reply_percent.get(message.guild.id, DEFAULT_REPLY_PERCENT)
-                == 1.0
+                or self.reply_percent.get(message.guild.id, DEFAULT_REPLY_PERCENT) == 1.0
             ):
                 await ctx.react_quietly("💤")
             return
@@ -293,8 +293,8 @@ class AIUser(
             api_type = "openrouter"
             api_key = (await self.bot.get_shared_api_tokens(api_type)).get("api_key")
             headers = {
-                "HTTP-Referer": "https://github.com/zhaobenny/bz-cogs/tree/main/aiuser",
-                "X-Title": "ai user",
+                "HTTP-Referer": "https://aiuser.zhao.gg",
+                "X-Title": "aiuser",
             }
         else:
             api_key = (await self.bot.get_shared_api_tokens("openai")).get("api_key")
@@ -313,7 +313,7 @@ class AIUser(
             )
             return
 
-        timeout = 60.0 if base_url else 50.0
+        timeout = 60.0 if api_type == "openrouter" else 50.0
 
         client = httpx.AsyncClient(
             event_hooks={"request": [self._log_request_prompt], "response": [self._update_ratelimit_hook]})
@@ -326,7 +326,7 @@ class AIUser(
         if not logger.isEnabledFor(logging.DEBUG):
             return
 
-        if request.method == "GET":
+        if request.url.path != "/v1/chat/completions":
             return
 
         bytes = await request.aread()

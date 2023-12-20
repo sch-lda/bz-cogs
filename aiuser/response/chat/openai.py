@@ -13,7 +13,7 @@ from aiuser.response.chat.generator import Chat_Generator
 logger = logging.getLogger("red.bz_cogs.aiuser")
 
 
-class OpenAI_Chat_Generator(Chat_Generator):
+class OpenAI_API_Generator(Chat_Generator):
     def __init__(self, cog: MixinMeta, ctx: commands.Context, messages: MessagesList):
         super().__init__(cog, ctx, messages)
 
@@ -49,6 +49,10 @@ class OpenAI_Chat_Generator(Chat_Generator):
                     model=model, messages=self.messages, **kwargs
                 )
             )
+
+            if hasattr(response, "error"):
+                raise Exception(f"LLM endpoint error: {response.error}")
+
             completion = response.choices[0].message.content
 
         logger.debug(

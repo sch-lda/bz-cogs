@@ -23,7 +23,7 @@ async def create_messages_list(
 ):
     """to manage messages in ChatML format"""
     thread = MessagesList(cog, ctx)
-    await thread._init(prompt)
+    await thread._init(prompt=prompt)
     return thread
 
 
@@ -52,7 +52,7 @@ class MessagesList:
     def __repr__(self) -> str:
         return json.dumps(self.get_json(), indent=4)
 
-    async def _init(self, given_prompt=None):
+    async def _init(self, prompt=None):
         model = await self.config.guild(self.guild).model()
         self.token_limit = self._get_token_limit(model)
         try:
@@ -60,10 +60,10 @@ class MessagesList:
         except KeyError:
             self._encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-        if not given_prompt:
+        if not prompt:  # jank
             await self.add_msg(self.init_message)
 
-        bot_prompt = given_prompt or await self._pick_prompt()
+        bot_prompt = prompt or await self._pick_prompt()
 
         await self.add_system(format_variables(self.ctx, bot_prompt))
 
@@ -124,11 +124,14 @@ class MessagesList:
             await self.add_msg(message.reference.resolved, index=0)
 
     async def add_system(self, content: str, index: int = None):
+        if self.tokens > self.token_limit:
+            return
         entry = MessageEntry("system", content)
         self.messages.insert(index or 0, entry)
         await self._add_tokens(content)
 
     async def add_history(self):
+        OPTIN_EMBED_TITLE = ":information_source: AI User Opt-In / Opt-Out"
         limit = await self.config.guild(self.guild).messages_backread()
         max_seconds_gap = await self.config.guild(
             self.guild
@@ -147,15 +150,7 @@ class MessagesList:
             )
         ]
 
-        if (
-            past_messages
-            and abs(
-                (
-                    past_messages[0].created_at - self.init_message.created_at
-                ).total_seconds()
-            )
-            > max_seconds_gap
-        ):
+        if (past_messages and not (await self._is_valid_time_gap(self.init_message, past_messages[0], max_seconds_gap))):
             return
 
         users = set()
@@ -174,9 +169,9 @@ class MessagesList:
                 return logger.debug(
                     f"{self.tokens} tokens used - nearing limit, stopping context creation for message {self.init_message.id}"
                 )
-            if await self._is_valid_time_gap(
-                past_messages[i], past_messages[i + 1], max_seconds_gap
-            ):
+            if (past_messages[i].author.id == self.bot.user.id) and (past_messages[i].embeds and past_messages[i].embeds[0].title == OPTIN_EMBED_TITLE):
+                continue
+            if await self._is_valid_time_gap(past_messages[i], past_messages[i + 1], max_seconds_gap):
                 await self.add_msg(past_messages[i])
             else:
                 await self.add_msg(past_messages[i])
@@ -216,12 +211,8 @@ class MessagesList:
         return limit
 
     @staticmethod
-    async def _is_valid_time_gap(
-        message: discord.Message, next_message: discord.Message, max_seconds_gap: int
-    ) -> bool:
-        time_between_messages = abs(
-            message.created_at - next_message.created_at
-        ).total_seconds()
-        if time_between_messages > max_seconds_gap:
+    async def _is_valid_time_gap(message: discord.Message, next_message: discord.Message, max_seconds_gap: int) -> bool:
+        seconds_diff = abs(message.created_at - next_message.created_at).total_seconds()
+        if seconds_diff > max_seconds_gap:
             return False
         return True

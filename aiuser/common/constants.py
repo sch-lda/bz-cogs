@@ -7,21 +7,11 @@ DEFAULT_PRESETS = {
     "neutral": "You are a helpful assistant called bugbot made by yeahsch. You can help me by answering my questions. You can also ask me questions.",
     "tsundere": "You are a helpful assistant called bugbot made by yeahsch. You can help me by answering my questions. You can also ask me questions.",
 }
-DEFAULT_TOPICS = [
-    "video games",
-    "tech",
-    "music",
-    "art",
-    "a movie",
-    "a tv show",
-    "anime",
-    "manga",
-    "sports",
-    "books",
-    "fitness and health",
-    "politics",
-    "science",
-    "cooking",
+DEFAULT_RANDOM_PROMPTS = [
+    "Talk about how today is {currentweekday}. You must state that today is {currentweekday}.",
+    "Talk about how empty the Discord channel is",
+    "Talk about how you are currently ordering takeout. State the specific cuisine ordered, and any other details you'd like to the Discord channel.",
+    "Make up a topic in the news. State that you just read about it in the news. Talk about that topic."
 ]
 DEFAULT_REMOVE_PATTERNS = [
     r'^As an AI language model,?',
@@ -63,10 +53,25 @@ IMAGE_UPLOAD_LIMIT = 2 * (1024 * 1024)  # 2 MB
 
 
 # models
+FUNCTION_CALLING_SUPPORTED_MODELS = [
+    "gpt-4",
+    "gpt-4-1106-preview",
+    "gpt-4-0613",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-1106",
+    "gpt-3.5-turbo-0613"
+    "openai/gpt-4",
+    "openai/gpt-4-1106-preview",
+    "openai/gpt-4-0613",
+    "openai/gpt-3.5-turbo",
+    "openai/gpt-3.5-turbo-1106",
+    "openai/gpt-3.5-turbo-0613",
+]
 VISION_SUPPORTED_MODELS = [
     "gpt-4-vision-preview",
     "openai/gpt-4-vision-preview",
-    "haotian-liu/llava-13b"
+    "haotian-liu/llava-13b",
+    "nousresearch/nous-hermes-2-vision-7b"
 ]
 OTHER_MODELS_LIMITS = {
     "gpt-3.5-turbo-1106": 12000,
@@ -76,6 +81,18 @@ OTHER_MODELS_LIMITS = {
     "claude-instant-v1": 98000,
     "toppy-m-7b": 31000,
     "nous-capybara-34b": 31000,
+    "stripedhyena-hessian-7b": 31000,
+    "stripedhyena-nous-7b": 31000,
+    "mythomist-7b": 31000,
+    "cinematika-7b": 31000,
+    "mixtral-8x7b-instruct": 31000,
+    "mixtral-8x7b": 31000,
+    "gemini-pro": 31000,
+    "gemini-pro-vision": 15000,
+    "rwkv-5-world-3b": 9000,
+    "rwkv-5-3b-ai-town": 9000,
+    "pplx-7b-chat": 7000,
+    "noromaid-20b": 7000,
     "palm-2-chat-bison": 7000,
     "claude-v1": 7000,
     "claude-1.2": 7000,
@@ -89,5 +106,6 @@ OTHER_MODELS_LIMITS = {
     "goliath-120b": 6000,
     "weaver": 6000,
     "palm-2-codechat-bison": 6000,
+    "openchat-7b": 6000,
     "remm-slerp-l2-13b": 5000
 }

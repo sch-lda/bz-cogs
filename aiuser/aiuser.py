@@ -276,7 +276,7 @@ class AIUser(
         return self.bot.user in message.mentions
 
     async def initialize_openai_client(self, ctx: commands.Context = None):
-        base_url = "https://api.gptgod.online/v1/"
+        base_url = await self.config.custom_openai_endpoint()
         api_type = "openai"
         api_key = None
         headers = None

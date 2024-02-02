@@ -4,6 +4,7 @@ from redbot.core.utils.menus import SimpleMenu
 
 from aimage.abc import MixinMeta
 from aimage.constants import AUTO_COMPLETE_SAMPLERS
+from aimage.helpers import get_auth
 
 
 class Settings(MixinMeta):
@@ -26,14 +27,18 @@ class Settings(MixinMeta):
 
         embed = discord.Embed(title="AImage Config", color=await ctx.embed_color())
         embed.add_field(name="Endpoint", value=config["endpoint"], inline=False)
+        embed.add_field(name="Default Negative Prompt", value=config["negative_prompt"], inline=False)
+        embed.add_field(name="Default Checkpoint", value=config["checkpoint"])
+        embed.add_field(name="Default VAE", value=config["vae"])
+        embed.add_field(name="Default Sampler", value=config["sampler"])
+        embed.add_field(name="Default CFG", value=config["cfg"])
+        embed.add_field(name="Default Sampling Steps", value=config["sampling_steps"])
+        embed.add_field(name="Default Size", value=f"{config['width']}x{config['height']}")
         embed.add_field(name="NSFW allowed", value=config["nsfw"])
-        embed.add_field(name="Default negative prompt", value=config["negative_prompt"])
-        embed.add_field(name="Default checkpoint", value=config["checkpoint"])
-        embed.add_field(name="Default sampler", value=config["sampler"])
-        embed.add_field(name="Default cfg", value=config["cfg"])
-        embed.add_field(name="Default sampling_steps", value=config["sampling_steps"])
-        embed.add_field(name="Default size", value=f"{config['width']}x{config['height']}")
         embed.add_field(name="Use ADetailer", value=config["adetailer"])
+        embed.add_field(name="Use Tiled VAE", value=config["tiledvae"])
+        embed.add_field(name="Max img2img size", value=f"{config['max_img2img']}²")
+
         blacklist = ", ".join(config["words_blacklist"])
         if len(blacklist) > 1024:
             blacklist = blacklist[:1020] + "..."
@@ -74,7 +79,7 @@ class Settings(MixinMeta):
         await ctx.send(f"NSFW filtering is now {'`disabled`' if not nsfw else '`enabled`'}")
 
     @aimage.command(name="negative_prompt")
-    async def negative_prompt(self, ctx: commands.Context, negative_prompt: str):
+    async def negative_prompt(self, ctx: commands.Context, *, negative_prompt: str):
         """
         Set the default negative prompt
         """
@@ -121,8 +126,8 @@ class Settings(MixinMeta):
         """
         Set the default width
         """
-        if width < 256 or width > 768:
-            return await ctx.send("Value must range between 256 and 768.")
+        if width < 256 or width > 1536:
+            return await ctx.send("Value must range between 256 and 1536.")
         await self.config.guild(ctx.guild).width.set(width)
         await ctx.tick()
 
@@ -131,9 +136,20 @@ class Settings(MixinMeta):
         """
         Set the default height
         """
-        if height < 256 or height > 768:
-            return await ctx.send("Value must range between 256 and 768.")
+        if height < 256 or height > 1536:
+            return await ctx.send("Value must range between 256 and 1536.")
         await self.config.guild(ctx.guild).height.set(height)
+        await ctx.tick()
+
+    @aimage.command(name="max_img2img")
+    async def max_img2img(self, ctx: commands.Context, resolution: int):
+        """
+        Set the maximum size (in pixels squared) of img2img and hires upscale.
+        Used to prevent out of memory errors. Default is 1536.
+        """
+        if resolution < 512 or resolution > 4096:
+            return await ctx.send("Value must range between 512 and 4096.")
+        await self.config.guild(ctx.guild).max_img2img.set(resolution)
         await ctx.tick()
 
     @aimage.command(name="checkpoint")
@@ -148,6 +164,20 @@ class Settings(MixinMeta):
         if checkpoint not in data:
             return await ctx.send(f":warning: Invalid checkpoint. Pick one of these:\n`{', '.join(data)}`")
         await self.config.guild(ctx.guild).checkpoint.set(checkpoint)
+        await ctx.tick()
+
+    @aimage.command(name="vae")
+    async def vae(self, ctx: commands.Context, *, vae: str):
+        """
+        Set the default vae used for generating images.
+        """
+        await ctx.message.add_reaction("🔄")
+        data = await self._fetch_data(ctx.guild, "sd-vae")
+        data = [choice["model_name"] for choice in data]
+        await ctx.message.remove_reaction("🔄", ctx.me)
+        if vae not in data:
+            return await ctx.send(f":warning: Invalid vae. Pick one of these:\n`{', '.join(data)}`")
+        await self.config.guild(ctx.guild).vae.set(vae)
         await ctx.tick()
 
     @aimage.command(name="auth")
@@ -165,7 +195,7 @@ class Settings(MixinMeta):
     @aimage.command(name="adetailer")
     async def adetailer(self, ctx: commands.Context):
         """
-        Whether to use face adetailer on generated pictures
+        Whether to use face adetailer on generated pictures, which improves quality.
         """
         new = not await self.config.guild(ctx.guild).adetailer()
         if new:
@@ -173,10 +203,26 @@ class Settings(MixinMeta):
             data = await self._fetch_data(ctx.guild, "scripts") or {}
             await ctx.message.remove_reaction("🔄", ctx.me)
             if "adetailer" not in data.get("txt2img", []):
-                return await ctx.send(":warning: The adetailer script is not installed in A1111, install [this.](<https://github.com/Bing-su/adetailer>)")
+                return await ctx.send(":warning: The ADetailer script is not installed in A1111, install [this.](<https://github.com/Bing-su/adetailer>)")
 
         await self.config.guild(ctx.guild).adetailer.set(new)
-        await ctx.send(f"adetailer is now {'`disabled`' if not new else '`enabled`'}")
+        await ctx.send(f"ADetailer is now {'`disabled`' if not new else '`enabled`'}")
+
+    @aimage.command(name="tiledvae")
+    async def tiledvae(self, ctx: commands.Context):
+        """
+        Whether to use tiled vae on generated pictures, which is used to prevent out of memory errors.
+        """
+        new = not await self.config.guild(ctx.guild).tiledvae()
+        if new:
+            await ctx.message.add_reaction("🔄")
+            data = await self._fetch_data(ctx.guild, "scripts") or {}
+            await ctx.message.remove_reaction("🔄", ctx.me)
+            if "tiled vae" not in data.get("txt2img", []):
+                return await ctx.send(":warning: The Tiled VAE script is not installed in A1111, install [this.](<https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111>)")
+
+        await self.config.guild(ctx.guild).tiledvae.set(new)
+        await ctx.send(f"Tiled VAE is now {'`disabled`' if not new else '`enabled`'}")
 
     @aimage.command(name="aihorde_mode")
     async def aihorde_mode(self, ctx: commands.Context):
@@ -328,7 +374,7 @@ class Settings(MixinMeta):
             await ctx.message.add_reaction("🔄")
             endpoint = await self.config.endpoint()
             auth_str = await self.config.auth()
-            async with self.session.get(endpoint + "scripts", auth=self.get_auth(auth_str)) as res:
+            async with self.session.get(endpoint + "scripts", auth=get_auth(auth_str)) as res:
                 if res.status != 200:
                     await ctx.message.remove_reaction("🔄", ctx.me)
                     return await ctx.send(":warning: Couldn't request Stable Diffusion endpoint!")

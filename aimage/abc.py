@@ -2,6 +2,7 @@ from abc import ABC
 
 import discord
 from aiohttp import ClientSession
+from collections import defaultdict
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 
@@ -11,10 +12,14 @@ class CompositeMetaClass(type(commands.Cog), type(ABC)):
 
 
 class MixinMeta(ABC):
+    bot: Red
+    config: Config
+    session: ClientSession
+    generating: defaultdict[int, bool]
+    autocomplete_cache: defaultdict[int, dict[str, list[str]]]
+
     def __init__(self, *args):
-        self.bot: Red
-        self.config: Config
-        self.session: ClientSession
+        pass
 
     async def _get_endpoint(self, guild: discord.Guild):
         """ Gets the correct endpoint for the guild """
@@ -28,4 +33,7 @@ class MixinMeta(ABC):
         pass
 
     async def generate_image(self, *args, **kwargs):
+        pass
+
+    async def generate_img2img(self, *args, **kwargs):
         pass

@@ -5,7 +5,7 @@ The bot will generate responses in whitelisted channels. Bot owners can add a ch
 [p]aiuser add <CHANNEL>
 ```
 
-Bot owners can change the percentage of eligible messages (per server) to reply to:
+Bot owners can change the percentage of eligible messages to reply to:
 ```
 [p]aiuser percent <PERCENT>
 ```
@@ -47,17 +47,21 @@ See other settings using:
 
 ![image_seeing](https://github.com/zhaobenny/bz-cogs/assets/46238123/8b0019f3-8b38-4578-b511-a350e10fce2d)
 
+Enabling image scanning will allow the bot to incorporate images in the triggering message into the prompt.
 
 Bot owners can see settings here:
 ```
 [p]aiuser imagescan
 ```
 
-### Supported LLM mode
+### Supported-LLM mode
 
-If the chosen LLM model (eg. gpt-4-vision-preview) supports images, it will directly sent the image as a input using this mode. (superior to other modes in performance but not in cost)
+This mode is superior in performance but not in cost. It will use the selected LLM from this command:
+```
+[p]aiuser imagescan model <MODEL_NAME>
+```
 
-### AI Horde Mode
+### AI-Horde Mode
 Utilize [AI Horde's](https://stablehorde.net/) Image Alchemy to caption images.
 
 AI Horde is a crowdsourced distributed cluster. Images will be uploaded to a **unknown third party** (a random volunteer worker machine)
@@ -65,7 +69,7 @@ AI Horde is a crowdsourced distributed cluster. Images will be uploaded to a **u
 Recommended to set a [API key](https://stablehorde.net/register). (or some [kudos](https://dbzer0.com/blog/the-kudos-based-economy-for-the-koboldai-horde/))
 
 
-### Local Image Mode
+### Local Mode
 
 Local image scanning mode will be **very CPU intensive**. *(Not recommended for busy servers/channel)*
 
@@ -165,17 +169,22 @@ See full details [here](https://openrouter.ai/docs#models).
 
 Bot owners can set this globally using the following:
 ```
-[p]aiuserowner endpoint https://openrouter.ai/api/v1
+[p]aiuserowner endpoint openrouter
 ```
 
-Get an API key from OpenRouter and set it here:
+You **must** get an API key from OpenRouter and set it here:
 ```
 [p]set api openrouter api_key,INSERT_API_KEY
 ```
 
-Models will also need **changing** per server.
+Models may need **changing** per server.
 
 Some third party models may have undesirable results.
+
+Bot owners may also want to set [custom parameters](https://openrouter.ai/docs#llm-parameters) (per server). See:
+```
+[p]aiuser response parameters
+```
 
 ---
 
@@ -183,7 +192,7 @@ Some third party models may have undesirable results.
 
 ⚠️ For advanced users! ⚠️
 
-Other OpenAI-Compatible API endpoints can be used instead of the default OpenAI API. (eg. gpt4all or text-generation-webui)
+Other OpenAI-Compatible API endpoints can be used instead of the default OpenAI API. (eg. `gpt4all` or `text-generation-webui`)
 
 Compatibility may vary and is not guaranteed.
 
@@ -202,4 +211,3 @@ Bot owners may also want to set custom parameters (per server). See:
 ```
 [p]aiuser response parameters
 ```
-

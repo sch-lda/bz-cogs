@@ -2,18 +2,15 @@ import asyncio
 import functools
 import logging
 import random
-import re
 from datetime import datetime
 from typing import Callable, Coroutine
 
 from discord import Message
 from openai import AsyncOpenAI
 from redbot.core import Config, commands
+from aiuser.common.constants import YOUTUBE_URL_PATTERN
 
-from aiuser.response.chat.functions.tool_defs import (IS_DAYTIME,
-                                                      LOCAL_WEATHER,
-                                                      LOCATION_WEATHER,
-                                                      SERPER_SEARCH)
+from aiuser.functions.tool_call import ToolCall
 
 logger = logging.getLogger("red.bz_cogs.aiuser")
 
@@ -80,10 +77,7 @@ def is_embed_valid(message: Message):
 
 
 def contains_youtube_link(content):
-    youtube_regex = (
-        r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)"
-    )
-    match = re.search(youtube_regex, content)
+    match = YOUTUBE_URL_PATTERN.search(content)
     return bool(match)
 
 
@@ -95,12 +89,19 @@ def is_using_openrouter_endpoint(client: AsyncOpenAI):
     return str(client.base_url).startswith("https://openrouter.ai/api/")
 
 
-async def get_available_tools(config: Config, ctx: commands.Context):
+async def get_enabled_tools(config: Config, ctx: commands.Context) -> list[ToolCall]:
+    from aiuser.functions.noresponse.tool_call import \
+        NoResponseToolCall
+    from aiuser.functions.search.tool_call import SearchToolCall
+    from aiuser.functions.weather.tool_call import (
+        IsDaytimeToolCall, LocalWeatherToolCall, LocationWeatherToolCall)
     tools = []
     if await config.guild(ctx.guild).function_calling_search():
-        tools.append(SERPER_SEARCH)
+        tools.append(SearchToolCall(config=config, ctx=ctx))
     if await config.guild(ctx.guild).function_calling_weather():
-        tools.append(LOCAL_WEATHER)
-        tools.append(LOCATION_WEATHER)
-        tools.append(IS_DAYTIME)
+        tools.append(LocationWeatherToolCall(config=config, ctx=ctx))
+        tools.append(LocalWeatherToolCall(config=config, ctx=ctx))
+        tools.append(IsDaytimeToolCall(config=config, ctx=ctx))
+    if await config.guild(ctx.guild).function_calling_no_response():
+        tools.append(NoResponseToolCall(config=config, ctx=ctx))
     return tools

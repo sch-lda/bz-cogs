@@ -17,7 +17,8 @@ from aiuser.common.constants import (
     DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS,
     DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS, DEFAULT_PRESETS,
     DEFAULT_RANDOM_PROMPTS, DEFAULT_REMOVE_PATTERNS, DEFAULT_REPLY_PERCENT,
-    IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH)
+    IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH,
+    SINGULAR_MENTION_PATTERN, URL_PATTERN)
 from aiuser.common.enums import ScanImageMode
 from aiuser.common.utilities import is_embed_valid, is_using_openai_endpoint
 from aiuser.messages_list.entry import MessageEntry
@@ -46,11 +47,9 @@ class AIUser(
         # cached options
         self.optindefault: dict[int, bool] = {}
         self.channels_whitelist: dict[int, list[int]] = {}
-        self.reply_percent: dict[int, float] = {}
         self.ignore_regex: dict[int, re.Pattern] = {}
         self.override_prompt_start_time: dict[int, datetime] = {}
         self.cached_messages: Cache[int, MessageEntry] = Cache(limit=100)
-        self.url_pattern = re.compile(r"(https?://\S+)")
 
         default_global = {
             "custom_openai_endpoint": None,
@@ -59,6 +58,7 @@ class AIUser(
             "ratelimit_reset": datetime(1990, 1, 1, 0, 1).strftime("%Y-%m-%d %H:%M:%S"),
             "max_random_prompt_length": 200,
             "max_prompt_length": 200,
+            "custom_text_prompt": None,
         }
 
         default_guild = {
@@ -70,6 +70,7 @@ class AIUser(
             "reply_to_mentions_replies": False,
             "scan_images": False,
             "scan_images_mode": ScanImageMode.AI_HORDE.value,
+            "scan_images_model": "gpt-4-vision-preview",
             "max_image_size": IMAGE_UPLOAD_LIMIT,
             "model": "gpt-3.5-turbo",
             "custom_text_prompt": None,
@@ -97,15 +98,19 @@ class AIUser(
             "function_calling_search": False,
             "function_calling_weather": False,
             "function_calling_default_location": [49.24966, -123.11934],
+            "function_calling_no_response": False
         }
         default_channel = {
             "custom_text_prompt": None,
+            "reply_percent": None
         }
         default_role = {
             "custom_text_prompt": None,
+            "reply_percent": None
         }
         default_member = {
             "custom_text_prompt": None,
+            "reply_percent": None
         }
 
         self.config.register_member(**default_member)
@@ -122,7 +127,6 @@ class AIUser(
         for guild_id, config in all_config.items():
             self.optindefault[guild_id] = config["optin_by_default"]
             self.channels_whitelist[guild_id] = config["channels_whitelist"]
-            self.reply_percent[guild_id] = config["reply_percent"]
             pattern = config["ignore_regex"]
 
             self.ignore_regex[guild_id] = re.compile(pattern) if pattern else None
@@ -172,7 +176,7 @@ class AIUser(
             return await ctx.send(
                 "您没有权限使用!请联系yeahsch", ephemeral=True
             )
-        elif self.reply_percent.get(ctx.guild.id) == 1.0:
+        elif await self.get_percentage(ctx) == 1.0:
             pass
         elif not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
             return await ctx.send("已被停用!请联系yeahsch", ephemeral=True)
@@ -199,9 +203,7 @@ class AIUser(
 
         if await self.is_bot_mentioned_or_replied(message):
             pass
-        elif random.random() > self.reply_percent.get(
-            message.guild.id, DEFAULT_REPLY_PERCENT
-        ):
+        elif random.random() > await self.get_percentage(ctx):
             return
 
         rate_limit_reset = datetime.strptime(await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S")
@@ -209,13 +211,12 @@ class AIUser(
             logger.debug(f"Want to respond but ratelimited until {rate_limit_reset.strftime('%Y-%m-%d %H:%M:%S')}")
             if (
                 await self.is_bot_mentioned_or_replied(message)
-                or self.reply_percent.get(message.guild.id, DEFAULT_REPLY_PERCENT) == 1.0
+                or await self.get_percentage(ctx) == 1.0
             ):
                 await ctx.react_quietly("💤")
             return
 
-        contains_url = self.url_pattern.search(ctx.message.content)
-        if contains_url:
+        if URL_PATTERN.search(ctx.message.content):
             ctx = await self.wait_for_embed(ctx)
 
         await self.send_response(ctx)
@@ -229,6 +230,27 @@ class AIUser(
                 break
             await asyncio.sleep(1)
         return ctx
+
+    async def get_percentage(self, ctx: commands.Context) -> bool:
+        role_percent = None
+        author = ctx.author
+
+        for role in author.roles:
+            if role.id in (await self.config.all_roles()):
+                role_percent = await self.config.role(role).reply_percent()
+                break
+
+        percentage = await self.config.member(author).reply_percent()
+        if percentage == None:
+            percentage = role_percent
+        if percentage == None:
+            percentage = await self.config.channel(ctx.channel).reply_percent()
+        if percentage == None:
+            percentage = await self.config.guild(ctx.guild).reply_percent()
+        if percentage == None:
+            percentage = DEFAULT_REPLY_PERCENT
+
+        return percentage
 
     async def is_common_valid_reply(self, ctx: commands.Context) -> bool:
         """Run some common checks to see if a message is valid for the bot to reply to"""
@@ -263,9 +285,31 @@ class AIUser(
         if (whitelisted_members or whitelisted_roles) and not ((ctx.author.id in whitelisted_members) or (ctx.author.roles and (set([role.id for role in ctx.author.roles]) & set(whitelisted_roles)))):
             return False
 
+        if not ctx.interaction and not self.is_good_text_message(ctx.message):
+            return False
+
         if not self.openai_client:
             await self.initialize_openai_client(ctx)
         if not self.openai_client:
+            return False
+
+        return True
+
+    def is_good_text_message(self, message: discord.Message) -> bool:
+        if SINGULAR_MENTION_PATTERN.match(message.content):
+            logger.debug(
+                f"Skipping singular mention message {message.id} in {message.guild.name}"
+            )
+            return False
+
+        if 1 <= len(message.content) < MIN_MESSAGE_LENGTH:
+            logger.debug(
+                f"Skipping short message {message.id} in {message.guild.name}")
+            return False
+
+        if len(message.content.split()) > MAX_MESSAGE_LENGTH:
+            logger.debug(
+                f"Skipping long message {message.id} in {message.guild.name}")
             return False
 
         return True

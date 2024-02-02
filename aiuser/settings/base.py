@@ -1,16 +1,15 @@
 import json
 import logging
-from typing import Union
+from typing import Optional, Union
 
 import discord
 from redbot.core import checks, commands
 from redbot.core.utils.menus import SimpleMenu
 
 from aiuser.abc import MixinMeta
-from aiuser.common.constants import (FUNCTION_CALLING_SUPPORTED_MODELS,
-                                     VISION_SUPPORTED_MODELS)
-from aiuser.common.enums import ScanImageMode
-from aiuser.common.utilities import (get_available_tools,
+from aiuser.common.constants import FUNCTION_CALLING_SUPPORTED_MODELS
+from aiuser.common.enums import MentionType
+from aiuser.common.utilities import (get_enabled_tools,
                                      is_using_openai_endpoint,
                                      is_using_openrouter_endpoint)
 from aiuser.settings.functions import FunctionCallingSettings
@@ -21,6 +20,7 @@ from aiuser.settings.prompt import PromptSettings
 from aiuser.settings.random_message import RandomMessageSettings
 from aiuser.settings.response import ResponseSettings
 from aiuser.settings.triggers import TriggerSettings
+from aiuser.settings.utilities import get_config_attribute, get_mention_type
 
 logger = logging.getLogger("red.bz_cogs.aiuser")
 
@@ -77,7 +77,7 @@ class Settings(
 
         main_embed.add_field(name="Model", inline=True, value=f"`{config['model']}`")
         main_embed.add_field(
-            name="Reply Percent",
+            name="Server Reply Percent",
             inline=True,
             value=f"`{config['reply_percent'] * 100:.2f}`%",
         )
@@ -132,7 +132,7 @@ class Settings(
         main_embed.add_field(
             name="Enabled Functions",
             inline=True,
-            value=f"`{len(await get_available_tools(self.config, ctx))}`",
+            value=f"`{len(await get_enabled_tools(self.config, ctx))}`",
         )
 
         main_embed.add_field(
@@ -225,18 +225,29 @@ class Settings(
 
     @aiuser.command()
     @checks.is_owner()
-    async def percent(self, ctx: commands.Context, percent: float):
-        """Change the bot's response chance
+    async def percent(self, ctx: commands.Context, mention: Optional[Union[discord.Member, discord.Role, discord.TextChannel, discord.VoiceChannel, discord.StageChannel]], percent: Optional[float]):
+        """Change the bot's response chance for a server (or a provided user, role, and channel)
+
+        If multiple percentage can be used, the most specific percentage will be used, eg. it will go for: member > role > channel > server
 
         **Arguments**
-            - `percent` A number between 0 and 100
+            - `mention` (Optional) A mention of a user, role, or channel
+            - `percent` (Optional) A number between 1 and 100, if omitted, will reset to using other percentages
         (Setting is per server)
         """
-        await self.config.guild(ctx.guild).reply_percent.set(percent / 100)
-        self.reply_percent[ctx.guild.id] = percent / 100
+        mention_type = get_mention_type(mention)
+        config_attr = get_config_attribute(self.config, mention_type, ctx, mention)
+        if not percent and mention_type == MentionType.SERVER:
+            return await ctx.send(":warning: No percent provided")
+        if percent:
+            await config_attr.reply_percent.set(percent / 100)
+            desc = f"{percent:.2f}%"
+        else:
+            await config_attr.reply_percent.set(None)
+            desc = "`Custom percent no longer set, will default to other percents`"
         embed = discord.Embed(
-            title="Chance that the bot will reply on this server is now:",
-            description=f"{percent:.2f}%",
+            title=f"Chance that the bot will reply on this {mention_type.name.lower()} is now:",
+            description=desc,
             color=await ctx.embed_color(),
         )
         return await ctx.send(embed=embed)
@@ -314,23 +325,20 @@ class Settings(
         await ctx.message.remove_reaction("🔄", ctx.me)
 
         if is_using_openai_endpoint(self.openai_client):
-            gpt_models = [
+            models = [
                 model.id for model in models_list.data if "gpt" in model.id]
         else:
-            gpt_models = [model.id for model in models_list.data]
+            models = [model.id for model in models_list.data]
 
         if model == "list":
-            return await self._paginate_models(ctx, gpt_models)
-
-        if await self.config.guild(ctx.guild).scan_images_mode() == ScanImageMode.LLM.value and model not in VISION_SUPPORTED_MODELS:
-            return await ctx.send(":warning: Can not select model that with no build-in support for images!\nSwitch image scanning mode or select a model that supports images.")
+            return await self._paginate_models(ctx, models)
 
         if await self.config.guild(ctx.guild).function_calling() and model not in FUNCTION_CALLING_SUPPORTED_MODELS:
             return await ctx.send(":warning: Can not select model that with no build-in support for function calling!\nSwitch function calling off or select a model that supports function calling.")
 
-        if model not in gpt_models:
+        if model not in models:
             await ctx.send(":warning: Not a valid model!")
-            return await self._paginate_models(ctx, gpt_models)
+            return await self._paginate_models(ctx, models)
 
         await self.config.guild(ctx.guild).model.set(model)
         embed = discord.Embed(

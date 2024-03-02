@@ -216,9 +216,6 @@ class AIUser(
     async def on_message_without_command(self, message: discord.Message):
         ctx: commands.Context = await self.bot.get_context(message)
 
-        if not await self.is_common_valid_reply(ctx):
-            return
-
         if await self.is_bot_mentioned_or_replied(message):
             pass
         elif random.random() > await self.get_percentage(ctx):
@@ -233,7 +230,14 @@ class AIUser(
             ):
                 await ctx.react_quietly("💤")
             return
-
+        
+        if self.bot.user in message.mentions:
+            await self.send_response(ctx)
+            return
+        
+        if not await self.is_common_valid_reply(ctx):
+            return
+        
         if URL_PATTERN.search(ctx.message.content):
             ctx = await self.wait_for_embed(ctx)
 
@@ -241,8 +245,6 @@ class AIUser(
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if self.bot.user in message.mentions:
-            await message.channel.send("Pong!")
 
     async def wait_for_embed(self, ctx: commands.Context):
         """Wait for possible embed to be valid"""

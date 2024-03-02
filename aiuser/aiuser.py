@@ -239,6 +239,11 @@ class AIUser(
 
         await self.send_response(ctx)
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if self.bot.user in message.mentions:
+            await message.channel.send("Pong!")
+
     async def wait_for_embed(self, ctx: commands.Context):
         """Wait for possible embed to be valid"""
         start_time = asyncio.get_event_loop().time()

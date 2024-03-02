@@ -196,8 +196,17 @@ class AIUser(
             await ctx.send(":生成回复失败!", ephemeral=True)
 
     @commands.command()
-    async def chat(self, ctx: commands.Context, *, member: discord.Member):
+    async def chat(self, ctx: commands.Context):
         """与chatgpt交谈."""
+
+        if not await self.is_common_valid_reply(ctx):
+            return await ctx.send(
+                "您没有权限使用!", ephemeral=True
+            )
+        elif await self.get_percentage(ctx) == 1.0:
+            pass
+        elif not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
+            return await ctx.send("已被停用!", ephemeral=True)
 
         rate_limit_reset = datetime.strptime(
             await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"

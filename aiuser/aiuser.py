@@ -17,7 +17,7 @@ from aiuser.common.constants import (
     DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS,
     DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS, DEFAULT_PRESETS,
     DEFAULT_RANDOM_PROMPTS, DEFAULT_REMOVE_PATTERNS, DEFAULT_REPLY_PERCENT,
-    IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH,
+    IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH, OPENROUTER_URL,
     SINGULAR_MENTION_PATTERN, URL_PATTERN)
 from aiuser.common.enums import ScanImageMode
 from aiuser.common.utilities import is_embed_valid, is_using_openai_endpoint
@@ -53,6 +53,7 @@ class AIUser(
 
         default_global = {
             "custom_openai_endpoint": None,
+            "openai_endpoint_request_timeout": 60,
             "optout": [],
             "optin": [],
             "ratelimit_reset": datetime(1990, 1, 1, 0, 1).strftime("%Y-%m-%d %H:%M:%S"),
@@ -325,7 +326,7 @@ class AIUser(
         api_key = None
         headers = None
 
-        if base_url and str(base_url).startswith("https://openrouter.ai/api/v1"):
+        if base_url and str(base_url).startswith(OPENROUTER_URL):
             api_type = "openrouter"
             api_key = (await self.bot.get_shared_api_tokens(api_type)).get("api_key")
             headers = {
@@ -335,27 +336,25 @@ class AIUser(
         else:
             api_key = (await self.bot.get_shared_api_tokens("openai")).get("api_key")
 
-        if not api_key and ctx:
-            error_message = (
-                f"{api_type} API key not set for `aiuser`. "
-                f"Please set it with `{ctx.clean_prefix}set api {api_type} api_key,API_KEY`"
-            )
-            await ctx.send(error_message)
-            return
+        if not api_key and (not base_url or api_type == "openrouter"):
+            if ctx:
+                error_message = (
+                    f"{api_type} API key not set for `aiuser`. "
+                    f"Please set it with `{ctx.clean_prefix}set api {api_type} api_key,API_KEY`"
+                )
+                return await ctx.send(error_message)
+            else:
+                return logger.error(
+                    f'{api_type} API key not set for "aiuser" yet! Please set it with: [p]set api {api_type} api_key,API_KEY'
+                )
 
-        if not api_key:
-            logger.error(
-                f'{api_type} API key not set for "aiuser" yet! Please set it with: [p]set api {api_type} api_key,API_KEY'
-            )
-            return
-
-        timeout = 60.0 if api_type == "openrouter" else 50.0
+        timeout = await self.config.openai_endpoint_request_timeout()
 
         client = httpx.AsyncClient(
             event_hooks={"request": [self._log_request_prompt], "response": [self._update_ratelimit_hook]})
 
         self.openai_client = AsyncOpenAI(
-            api_key=api_key, base_url=base_url, timeout=timeout, default_headers=headers, http_client=client
+            api_key=api_key or "sk-placeholderkey", base_url=base_url, timeout=timeout, default_headers=headers, http_client=client
         )
 
     async def _log_request_prompt(self, request: httpx.Request):

@@ -175,51 +175,42 @@ class AIUser(
 
         if not await self.is_common_valid_reply(ctx):
             return await ctx.send(
-                "您没有权限使用!请联系yeahsch", ephemeral=True
+                "您没有权限使用!", ephemeral=True
             )
         elif await self.get_percentage(ctx) == 1.0:
             pass
         elif not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
-            return await ctx.send("已被停用!请联系yeahsch", ephemeral=True)
+            return await ctx.send("已被停用!", ephemeral=True)
 
         rate_limit_reset = datetime.strptime(
             await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"
         )
         if rate_limit_reset > datetime.now():
             return await ctx.send(
-                "触发速率限制!请联系yeahsch", ephemeral=True
+                "触发速率限制!", ephemeral=True
             )
 
         try:
             await self.send_response(ctx)
         except:
-            await ctx.send(":生成回复失败!请联系yeahsch", ephemeral=True)
+            await ctx.send(":生成回复失败!", ephemeral=True)
 
     @commands.command()
     async def chat(self, ctx: commands.Context, *, member: discord.Member):
         """与chatgpt交谈."""
 
-        if not await self.is_common_valid_reply(ctx):
-            return await ctx.send(
-                "您没有权限使用!请联系yeahsch", ephemeral=True
-            )
-        elif await self.get_percentage(ctx) == 1.0:
-            pass
-        elif not (await self.config.guild(ctx.guild).reply_to_mentions_replies()):
-            return await ctx.send("已被停用!请联系yeahsch", ephemeral=True)
-
         rate_limit_reset = datetime.strptime(
             await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"
         )
         if rate_limit_reset > datetime.now():
             return await ctx.send(
-                "触发速率限制!请联系yeahsch", ephemeral=True
+                "触发速率限制!", ephemeral=True
             )
 
         try:
             await self.send_response(ctx)
         except:
-            await ctx.send(":生成回复失败!请联系yeahsch", ephemeral=True)
+            await ctx.send(":生成回复失败!", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):

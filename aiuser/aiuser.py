@@ -243,8 +243,6 @@ class AIUser(
 
         await self.send_response(ctx)
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
 
     async def wait_for_embed(self, ctx: commands.Context):
         """Wait for possible embed to be valid"""

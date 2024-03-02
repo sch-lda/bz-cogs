@@ -56,8 +56,8 @@ SINGULAR_MENTION_PATTERN = re.compile(r"^<@!?&?(\d+)>$")
 
 
 # misc
-MIN_MESSAGE_LENGTH = 2
-MAX_MESSAGE_LENGTH = 2000  # in words
+MIN_MESSAGE_LENGTH = 1
+MAX_MESSAGE_LENGTH = 8000  # in words
 OPENROUTER_URL = "https://openrouter.ai/api/"
 
 # image captioning

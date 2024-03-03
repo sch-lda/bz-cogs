@@ -193,7 +193,7 @@ class AIUser(
         try:
             await self.send_response(ctx)
         except:
-            await ctx.send(":生成回复失败!", ephemeral=True)
+            await ctx.send("回复失败!", ephemeral=True)
 
     @commands.command()
     async def chat(self, ctx: commands.Context):
@@ -210,16 +210,11 @@ class AIUser(
         try:
             await self.send_response(ctx)
         except:
-            await ctx.send(":生成回复失败!", ephemeral=True)
+            await ctx.send("回复失败!", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
         ctx: commands.Context = await self.bot.get_context(message)
-
-        if await self.is_bot_mentioned_or_replied(message):
-            pass
-        elif random.random() > await self.get_percentage(ctx):
-            return
 
         rate_limit_reset = datetime.strptime(await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S")
         if rate_limit_reset > datetime.now():

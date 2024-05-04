@@ -227,7 +227,7 @@ class AIUser(
             return
         
         if (message.author.id in await self.config.optout()):
-            message.channel.send("您在排除列表,bugbot不会收集您的消息!")
+            await message.channel.send("您在排除列表,bugbot不会收集您的消息!")
             return False
         
         if self.bot.user in message.mentions:

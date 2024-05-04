@@ -226,11 +226,11 @@ class AIUser(
                 await ctx.react_quietly("💤")
             return
         
-        if self.bot.user in message.mentions:
-            await self.send_response(ctx)
+        if not await self.is_common_valid_reply(ctx):
             return
         
-        if not await self.is_common_valid_reply(ctx):
+        if self.bot.user in message.mentions:
+            await self.send_response(ctx)
             return
         
         if URL_PATTERN.search(ctx.message.content):

@@ -226,14 +226,15 @@ class AIUser(
                 await ctx.react_quietly("💤")
             return
         
-        if not await self.is_common_valid_reply(ctx):
-            message.channel.send(f" {message.author.mention} 您没有权限使用bugbot")
-            return
+        if (message.author.id in await self.config.optout()):
+            message.channel.send("您在排除列表,bugbot不会收集您的消息!")
+            return False
         
         if self.bot.user in message.mentions:
             await self.send_response(ctx)
             return
-        
+        if not await self.is_common_valid_reply(ctx):
+            return
         if URL_PATTERN.search(ctx.message.content):
             ctx = await self.wait_for_embed(ctx)
 
@@ -274,21 +275,18 @@ class AIUser(
     async def is_common_valid_reply(self, ctx: commands.Context) -> bool:
         """Run some common checks to see if a message is valid for the bot to reply to"""
         if not ctx.guild:
+
             return False
         if await self.bot.cog_disabled_in_guild(self, ctx.guild):
             return False
-        if ctx.author.bot:
+        if ctx.author.bot or not self.channels_whitelist.get(ctx.guild.id, []):
             return False
-
-        #if ctx.author.bot or not self.channels_whitelist.get(ctx.guild.id, []):
-        #    return False
-        #if not ctx.interaction and (
-        #    isinstance(ctx.channel, discord.Thread)
-        #    and ctx.channel.parent.id not in self.channels_whitelist[ctx.guild.id]
-        #    or ctx.channel.id not in self.channels_whitelist[ctx.guild.id]
-        #):
-        #    return False
-        
+        if not ctx.interaction and (
+            isinstance(ctx.channel, discord.Thread)
+            and ctx.channel.parent.id not in self.channels_whitelist[ctx.guild.id]
+            or ctx.channel.id not in self.channels_whitelist[ctx.guild.id]
+        ):
+            return False
         if not await self.bot.ignored_channel_or_guild(ctx):
             return False
         if not await self.bot.allowed_by_whitelist_blacklist(ctx.author):

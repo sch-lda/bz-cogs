@@ -227,6 +227,7 @@ class AIUser(
             return
         
         if not await self.is_common_valid_reply(ctx):
+            ctx.send("您没有权限使用!")
             return
         
         if self.bot.user in message.mentions:

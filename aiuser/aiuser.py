@@ -226,14 +226,16 @@ class AIUser(
                 await ctx.react_quietly("💤")
             return
         
-        if (message.author.id in await self.config.optout()):
-            await message.channel.send("您在排除列表,bugbot不会收集您的消息!")
-            return False
-        else:
-            if self.bot.user in message.mentions:
+
+        
+        if self.bot.user in message.mentions:
+            if (message.author.id in await self.config.optout()):
+                await message.channel.send("您在排除列表,bugbot不会收集您的消息!")
+                return False
+            else:
                 await self.send_response(ctx)
                 return
-
+            
         if not await self.is_common_valid_reply(ctx):
             return
         if URL_PATTERN.search(ctx.message.content):

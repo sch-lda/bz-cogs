@@ -410,10 +410,11 @@ class Settings(
         await ctx.send("You are now opted out bot-wide")
 
     @aiuser.command()
+    @checks.is_owner()
     async def optoutuser(self, ctx: commands.Context, *, member: discord.Member):
         """Opt out of sending user's messages / images to OpenAI or another endpoint (bot-wide)
 
-        This will prevent the bot from replying to user's messages or using your messages.
+        This will prevent the bot from replying to user's messages or using user's messages.
         """
         optout = await self.config.optout()
         if member.id in optout:
@@ -425,6 +426,24 @@ class Settings(
         optout.append(member.id)
         await self.config.optout.set(optout)
         await ctx.send(f"{member.mention} You are now opted out bot-wide")
+        
+    @aiuser.command()
+    @checks.is_owner()
+    async def optinuser(self, ctx: commands.Context, *, member: discord.Member):
+        """Opt in of sending user's messages / images to OpenAI or another endpoint (bot-wide)
+
+        This will allow the bot to reply to user's messages or using user's messages.
+        """
+        optin = await self.config.optin()
+        if member.id in await self.config.optin():
+            return await ctx.send(f"{member.mention} You are already opted in.")
+        optout = await self.config.optout()
+        if member.id in optout:
+            optout.remove(member.id)
+            await self.config.optout.set(optout)
+        optin.append(member.id)
+        await self.config.optin.set(optin)
+        await ctx.send(f"{member.mention} You are now opted in bot-wide")
 
     @aiuser.command(name="optinbydefault", alias=["optindefault"])
     @checks.admin_or_permissions(manage_guild=True)

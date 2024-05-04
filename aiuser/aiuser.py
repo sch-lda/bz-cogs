@@ -229,10 +229,11 @@ class AIUser(
         if (message.author.id in await self.config.optout()):
             await message.channel.send("您在排除列表,bugbot不会收集您的消息!")
             return False
-        
-        if self.bot.user in message.mentions:
-            await self.send_response(ctx)
-            return
+        else:
+            if self.bot.user in message.mentions:
+                await self.send_response(ctx)
+                return
+
         if not await self.is_common_valid_reply(ctx):
             return
         if URL_PATTERN.search(ctx.message.content):

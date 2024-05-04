@@ -227,7 +227,7 @@ class AIUser(
             return
         
         if not await self.is_common_valid_reply(ctx):
-            ctx.send("您没有权限使用!")
+            message.channel.send(f" {message.author.mention} 您没有权限使用bugbot")
             return
         
         if self.bot.user in message.mentions:
@@ -277,14 +277,18 @@ class AIUser(
             return False
         if await self.bot.cog_disabled_in_guild(self, ctx.guild):
             return False
-        if ctx.author.bot or not self.channels_whitelist.get(ctx.guild.id, []):
+        if ctx.author.bot:
             return False
-        if not ctx.interaction and (
-            isinstance(ctx.channel, discord.Thread)
-            and ctx.channel.parent.id not in self.channels_whitelist[ctx.guild.id]
-            or ctx.channel.id not in self.channels_whitelist[ctx.guild.id]
-        ):
-            return False
+
+        #if ctx.author.bot or not self.channels_whitelist.get(ctx.guild.id, []):
+        #    return False
+        #if not ctx.interaction and (
+        #    isinstance(ctx.channel, discord.Thread)
+        #    and ctx.channel.parent.id not in self.channels_whitelist[ctx.guild.id]
+        #    or ctx.channel.id not in self.channels_whitelist[ctx.guild.id]
+        #):
+        #    return False
+        
         if not await self.bot.ignored_channel_or_guild(ctx):
             return False
         if not await self.bot.allowed_by_whitelist_blacklist(ctx.author):

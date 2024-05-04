@@ -424,7 +424,7 @@ class Settings(
             await self.config.optin.set(optin)
         optout.append(member.id)
         await self.config.optout.set(optout)
-        await ctx.send("{member.mention} You are now opted out bot-wide")
+        await ctx.send(f"{member.mention} You are now opted out bot-wide")
 
     @aiuser.command(name="optinbydefault", alias=["optindefault"])
     @checks.admin_or_permissions(manage_guild=True)

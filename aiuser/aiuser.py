@@ -234,7 +234,7 @@ class AIUser(
                 await self.send_response(ctx)
                 return
             
-        if not ctx.guild:
+        if not ctx.guild and not message.author.bot:
             await self.send_response(ctx)
             return
         

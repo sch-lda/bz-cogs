@@ -65,6 +65,39 @@ def format_variables(ctx: commands.Context, text: str):
         logger.exception("Invalid key in message", exc_info=True)
         return text
 
+def format_variables_DM(ctx: commands.Context, text: str):
+    """
+    Insert supported variables into string if they are present
+    """
+    botname = "Bugbot"
+    authorname = ctx.message.author.display_name
+    authortoprole = None
+
+    servername = "DM"
+    channelname = "DM"
+    currentdate = datetime.today().strftime("%Y/%m/%d")
+    currentweekday = datetime.today().strftime("%A")
+    currenttime = datetime.today().strftime("%H:%M")
+
+    serveremojis = ""
+
+    try:
+        res = text.format(
+            botname=botname,
+            authorname=authorname,
+            authortoprole=authortoprole,
+            servername=servername,
+            serveremojis=serveremojis,
+            channelname=channelname,
+            currentdate=currentdate,
+            currentweekday=currentweekday,
+            currenttime=currenttime,
+        )
+        return res
+    except KeyError:
+        logger.exception("Invalid key in message", exc_info=True)
+        return text
+
 
 def is_embed_valid(message: Message):
     if (

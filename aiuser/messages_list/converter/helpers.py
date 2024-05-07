@@ -12,7 +12,10 @@ def format_text_content(message: Message):
     if not message.content or message.content == "" or message.content.isspace():
         return None
     content = mention_to_text(message)
-    if message.author.id == message.guild.me.id:
+    if message.guild is not None:
+        if message.author.id == message.guild.me.id:
+            return f'{content}'
+    else:
         return f'{content}'
     return f'User "{message.author.display_name}" said: {content}'
 

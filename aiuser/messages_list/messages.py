@@ -11,7 +11,7 @@ from redbot.core import commands
 from aiuser.abc import MixinMeta
 from aiuser.common.constants import DEFAULT_PROMPT, OTHER_MODELS_LIMITS
 from aiuser.common.enums import ScanImageMode
-from aiuser.common.utilities import format_variables
+from aiuser.common.utilities import format_variables, format_variables_DM
 from aiuser.messages_list.converter.converter import MessageConverter
 from aiuser.messages_list.entry import MessageEntry
 from aiuser.messages_list.opt_view import OptView
@@ -33,7 +33,7 @@ async def create_messages_list_DM(
     cog: MixinMeta, ctx: commands.Context, prompt: str = None
 ):
     """to manage messages in ChatML format"""
-    ctx.guild = await self.bot.get_guild(388227343862464513)
+    ctx.guild = await cog.bot.fetch_guild(388227343862464513)
     thread = MessagesList_DM(cog, ctx)
     await thread._init(prompt=prompt)
     return thread
@@ -307,7 +307,7 @@ class MessagesList_DM:
 
         bot_prompt = prompt or await self._pick_prompt()
 
-        await self.add_system(format_variables(self.ctx, bot_prompt))
+        await self.add_system(format_variables_DM(self.ctx, bot_prompt))
 
         if await self._check_if_inital_img():
             self.model = await self.config.guild(self.guild).scan_images_model()
@@ -329,20 +329,9 @@ class MessagesList_DM:
             return False
 
     async def _pick_prompt(self):
-        author = self.init_message.author
-        role_prompt = None
 
-        for role in author.roles:
-            if role.id in (await self.config.all_roles()):
-                role_prompt = await self.config.role(role).custom_text_prompt()
-                break
-
-        return (await self.config.member(self.init_message.author).custom_text_prompt()
-                or role_prompt
-                or await self.config.channel(self.init_message.channel).custom_text_prompt()
-                or await self.config.guild(self.guild).custom_text_prompt()
-                or await self.config.custom_text_prompt()
-                or DEFAULT_PROMPT)
+        guild = await self.bot.fetch_guild(388227343862464513)            
+        return await self.config.guild(guild).custom_text_prompt()
 
     async def check_if_add(self, message: Message, force: bool = False):
         if self.tokens > self.token_limit:

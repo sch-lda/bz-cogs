@@ -25,10 +25,11 @@ class ResponseHandler(MixinMeta):
         if (not messages_list and not ctx.interaction) and await self.is_image_request(ctx.message):
             if await self.send_image(ctx):
                 return
-
-        if not messages_list:
-            messages_list = await create_messages_list(self, ctx)
-            await messages_list.add_history()
+            
+        if ctx.guild is not None:
+            if not messages_list:
+                messages_list = await create_messages_list(self, ctx)
+                await messages_list.add_history()
 
         await self.send_message(ctx, messages_list)
 

@@ -34,10 +34,13 @@ class ResponseHandler(MixinMeta):
         await self.send_message(ctx, messages_list)
 
     async def send_message(self, ctx: commands.Context, messages_list: MessagesList):
+        
         chat = None
-
-        if await self.config.guild(ctx.guild).function_calling() and messages_list.model in FUNCTION_CALLING_SUPPORTED_MODELS:
-            chat = OpenAI_Functions_API_Generator(self, ctx, messages_list)
+        if ctx.guild is not None:
+            if await self.config.guild(ctx.guild).function_calling() and messages_list.model in FUNCTION_CALLING_SUPPORTED_MODELS:
+                chat = OpenAI_Functions_API_Generator(self, ctx, messages_list)
+            else:
+                chat = OpenAI_API_Generator(self, ctx, messages_list)
         else:
             chat = OpenAI_API_Generator(self, ctx, messages_list)
 

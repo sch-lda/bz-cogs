@@ -29,9 +29,8 @@ class ChatResponse():
             return False
 
         # await self.remove_patterns_from_response()
-
-        # 如果回复信息包含"123"或"456"，则屏蔽消息
-        if re.search(r"政治|领导人|politics|leaders", self.response):
+        
+        if re.search(r"政治|领导人|politics|leaders", self.response) and message.author.id != '1044589526116470844':
             self.response = "抱歉，当前gpt对话可能不合适，不予展示"
 
 

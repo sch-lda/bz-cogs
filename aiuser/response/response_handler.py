@@ -7,7 +7,7 @@ from redbot.core import commands
 from aiuser.abc import MixinMeta
 from aiuser.common.constants import (FUNCTION_CALLING_SUPPORTED_MODELS,
                                      IMAGE_REQUEST_CHECK_PROMPT)
-from aiuser.messages_list.messages import MessagesList, create_messages_list
+from aiuser.messages_list.messages import MessagesList, create_messages_list, create_messages_list_DM
 from aiuser.response.chat.openai import OpenAI_API_Generator, OpenAI_API_Generator_DM
 from aiuser.response.chat.openai_funcs import OpenAI_Functions_API_Generator
 from aiuser.response.chat.response import ChatResponse
@@ -30,6 +30,9 @@ class ResponseHandler(MixinMeta):
             if not messages_list:
                 messages_list = await create_messages_list(self, ctx)
                 await messages_list.add_history()
+        else:
+            if not messages_list:
+                messages_list = await create_messages_list_DM(self, ctx)
 
         await self.send_message(ctx, messages_list)
 

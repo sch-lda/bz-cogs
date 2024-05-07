@@ -79,6 +79,7 @@ class ResponseHandler(MixinMeta):
         return False
 
     async def is_image_request(self, message) -> bool:
+        return False
         if not await self.config.guild(message.guild).image_requests():
             return False
 

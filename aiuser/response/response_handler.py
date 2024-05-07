@@ -42,6 +42,11 @@ class ResponseHandler(MixinMeta):
 
         async with ctx.message.channel.typing():
             response = ChatResponse(ctx, self.config, chat)
+
+            if re.search(r"政治|领导人|politics|leaders", messages_list.messages[0].content):
+                await ctx.send("抱歉，当前gpt对话可能不合适，不予展示")
+                return            
+            
             await response.send()
 
     async def send_image(self, ctx: commands.Context):

@@ -234,6 +234,10 @@ class AIUser(
                 await self.send_response(ctx)
                 return
             
+        if not ctx.guild:
+            await self.send_response(ctx)
+            return
+        
         if not await self.is_common_valid_reply(ctx):
             return
         if URL_PATTERN.search(ctx.message.content):

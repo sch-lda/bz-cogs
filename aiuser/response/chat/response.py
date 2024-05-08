@@ -14,6 +14,7 @@ logger = logging.getLogger("red.bz_cogs.aiuser")
 
 class ChatResponse():
     def __init__(self, ctx: commands.Context, config: Config, chat: Chat_Generator):
+        self.bot = ctx.bot
         self.ctx = ctx
         self.config = config
         self.response = None
@@ -22,7 +23,7 @@ class ChatResponse():
 
     async def send(self):
         message = self.ctx.message
-
+        
         self.response = await self.chat.generate_message()
 
         if not self.response:

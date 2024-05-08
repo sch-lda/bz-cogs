@@ -36,8 +36,6 @@ class ChatResponse():
             await ntfuser.send(f"用户{self.ctx.author}gpt回复异常，内容为```{self.response}```")
             self.response = "抱歉，当前gpt对话可能不合适，不予展示"
 
-
-
         if not self.response:
             return False
 

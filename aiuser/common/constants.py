@@ -33,6 +33,7 @@ DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS = [
     "image", "images", "picture", "pictures", "photo", "photos", "photograph", "photographs"]
 DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS = ["yourself", "you"]
 DEFAULT_REPLY_PERCENT = 1.0
+DEFAULT_MIN_MESSAGE_LENGTH = 2
 
 ### END DEFAULTS ###
 
@@ -67,6 +68,7 @@ IMAGE_UPLOAD_LIMIT = 2 * (1024 * 1024)  # 2 MB
 # models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
     "gpt-4",
+    "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-0613",
     "gpt-3.5-turbo",
@@ -74,6 +76,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     "gpt-3.5-turbo-0613",
     "gpt-3.5-turbo-0125",
     "openai/gpt-4",
+    "openai/gpt-4-turbo",
     "openai/gpt-4-1106-preview",
     "openai/gpt-4-0613",
     "openai/gpt-3.5-turbo",
@@ -82,21 +85,37 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     "openai/gpt-3.5-turbo-0125"
 ]
 VISION_SUPPORTED_MODELS = [
+    "gpt-4-turbo",
     "gpt-4-vision-preview",
+    "openai/gpt-4-turbo",
     "openai/gpt-4-vision-preview",
-    "haotian-liu/llava-13b",
-    "nousresearch/nous-hermes-2-vision-7b"
+    "google/gemini-pro-1.5",
+    "anthropic/claude-3-haiku",
+    "anthropic/claude-3-sonnet",
+    "anthropic/claude-3-opus",
+    "anthropic/claude-3-haiku:beta",
+    "anthropic/claude-3-sonnet:beta",
+    "anthropic/claude-3-opus:beta",
 ]
 OTHER_MODELS_LIMITS = {
-    "gpt-3.5-turbo-1106": 12000,
+    "gemini-pro-1.5": 3998000,
+    "claude-3-haiku": 198000,
+    "claude-3-opus": 198000,
+    "claude-3-sonnet": 198000,
+    "claude-2.1": 198000,
     "gpt-4-1106-preview": 123000,
     "gpt-4-vision-preview": 123000,
+    "gpt-4-turbo": 123000,
+    "gpt-4-turbo-preview": 123000,
+    "command-r-plus": 123000,
     "claude-2": 98000,
     "claude-instant-v1": 98000,
+    "command-r": 98000,
+    "mixtral-8x22b": 60000,
+    "mixtral-8x22b-instruct": 60000,
+    "wizardlm-2-8x22b": 60000,
+    "zephyr-orpo-141b-a35b": 60000,
     "dolphin-mixtral-8x7b": 31000,
-    "mistral-tiny": 31000,
-    "mistral-small": 31000,
-    "mistral-medium": 31000,
     "toppy-m-7b": 31000,
     "nous-capybara-34b": 31000,
     "stripedhyena-hessian-7b": 31000,
@@ -106,9 +125,26 @@ OTHER_MODELS_LIMITS = {
     "mixtral-8x7b-instruct": 31000,
     "mixtral-8x7b": 31000,
     "gemini-pro": 31000,
+    "mistral-7b-instruct": 31000,
+    "nous-hermes-2-mixtral-8x7b-dpo": 31000,
+    "nous-hermes-2-mixtral-8x7b-sft": 31000,
+    "dbrx-instruct": 31000,
+    "mistral-tiny": 28000,
+    "mistral-small": 28000,
+    "mistral-medium": 28000,
+    "mistral-large": 28000,
+    "soliloquy-l3": 21000,
+    "sonar-small-chat": 18000,
+    "sonar-medium-chat": 18000,
     "gemini-pro-vision": 15000,
+    "gpt-3.5-turbo-1106": 12000,
     "rwkv-5-world-3b": 9000,
     "rwkv-5-3b-ai-town": 9000,
+    "sonar-small-online": 8000,
+    "sonar-medium-online": 8000,
+    "fimbulvetr-11b-v2": 7000,
+    "llama-3-8b-instruct": 7000,
+    "llama-3-70b-instruct": 7000,
     "noromaid-mixtral-8x7b-instruct": 7000,
     "bagel-34b": 7000,
     "pplx-7b-chat": 7000,
@@ -127,5 +163,6 @@ OTHER_MODELS_LIMITS = {
     "weaver": 6000,
     "palm-2-codechat-bison": 6000,
     "openchat-7b": 6000,
-    "remm-slerp-l2-13b": 5000
+    "gemma-7b-it": 6000,
+    "nous-hermes-2-mistral-7b-dpo": 6000,
 }

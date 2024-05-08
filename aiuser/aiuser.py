@@ -15,12 +15,13 @@ from aiuser.abc import CompositeMetaClass
 from aiuser.common.cache import Cache
 from aiuser.common.constants import (
     DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS,
-    DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS, DEFAULT_PRESETS,
-    DEFAULT_RANDOM_PROMPTS, DEFAULT_REMOVE_PATTERNS, DEFAULT_REPLY_PERCENT,
-    IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH, MIN_MESSAGE_LENGTH, OPENROUTER_URL,
-    SINGULAR_MENTION_PATTERN, URL_PATTERN)
+    DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS, DEFAULT_MIN_MESSAGE_LENGTH,
+    DEFAULT_PRESETS, DEFAULT_RANDOM_PROMPTS, DEFAULT_REMOVE_PATTERNS,
+    DEFAULT_REPLY_PERCENT, IMAGE_UPLOAD_LIMIT, MAX_MESSAGE_LENGTH,
+    OPENROUTER_URL, SINGULAR_MENTION_PATTERN, URL_PATTERN)
 from aiuser.common.enums import ScanImageMode
 from aiuser.common.utilities import is_embed_valid, is_using_openai_endpoint
+from aiuser.dashboard_integration import DashboardIntegration
 from aiuser.messages_list.entry import MessageEntry
 from aiuser.random_message_task import RandomMessageTask
 from aiuser.response.response_handler import ResponseHandler
@@ -31,13 +32,16 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 class AIUser(
+    DashboardIntegration,
     Settings,
     ResponseHandler,
     RandomMessageTask,
     commands.Cog,
     metaclass=CompositeMetaClass,
 ):
-    """Utilize OpenAI to reply to messages and images in approved channels."""
+    """
+        Human-like Discord interactions powered by OpenAI (or compatible endpoints) for messages (and images).
+    """
 
     def __init__(self, bot):
         super().__init__()
@@ -68,6 +72,7 @@ class AIUser(
             "reply_percent": DEFAULT_REPLY_PERCENT,
             "messages_backread": 10,
             "messages_backread_seconds": 60 * 120,
+            "messages_min_length": DEFAULT_MIN_MESSAGE_LENGTH,
             "reply_to_mentions_replies": False,
             "scan_images": False,
             "scan_images_mode": ScanImageMode.AI_HORDE.value,
@@ -96,10 +101,8 @@ class AIUser(
             "image_requests_trigger_words": DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS,
             "image_requests_second_person_trigger_words": DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS,
             "function_calling": False,
-            "function_calling_search": False,
-            "function_calling_weather": False,
+            "function_calling_functions": [],
             "function_calling_default_location": [49.24966, -123.11934],
-            "function_calling_no_response": False
         }
         default_channel = {
             "custom_text_prompt": None,
@@ -165,7 +168,7 @@ class AIUser(
         self,
         inter: discord.Interaction,
         *,
-        text: app_commands.Range[str, MIN_MESSAGE_LENGTH, MAX_MESSAGE_LENGTH],
+        text: app_commands.Range[str, 0, MAX_MESSAGE_LENGTH],
     ):
         """与gpt-3.5-turbo交谈"""
         await inter.response.defer()
@@ -192,7 +195,7 @@ class AIUser(
 
         try:
             await self.send_response(ctx)
-        except:
+        except Exception:
             await ctx.send("回复失败!", ephemeral=True)
 
     @commands.command()
@@ -223,7 +226,7 @@ class AIUser(
                 await self.is_bot_mentioned_or_replied(message)
                 or await self.get_percentage(ctx) == 1.0
             ):
-                await ctx.react_quietly("💤")
+                await ctx.react_quietly("💤", message="`aiuser` is ratedlimited")
             return
         
         if self.bot.user in message.mentions:
@@ -292,8 +295,14 @@ class AIUser(
             or ctx.channel.id not in self.channels_whitelist[ctx.guild.id]
         ):
             return False
-        if not await self.bot.ignored_channel_or_guild(ctx):
+
+        try:
+            if not await self.bot.ignored_channel_or_guild(ctx):
+                return False
+        except Exception:
+            logger.debug("Exception in checking if ignored channel or guild", exc_info=True)
             return False
+
         if not await self.bot.allowed_by_whitelist_blacklist(ctx.author):
             return False
         if (ctx.author.id in await self.config.optout()):
@@ -311,7 +320,7 @@ class AIUser(
         if (whitelisted_members or whitelisted_roles) and not ((ctx.author.id in whitelisted_members) or (ctx.author.roles and (set([role.id for role in ctx.author.roles]) & set(whitelisted_roles)))):
             return False
 
-        if not ctx.interaction and not self.is_good_text_message(ctx.message):
+        if not ctx.interaction and not await self.is_good_text_message(ctx.message):
             return False
 
         if not self.openai_client:
@@ -321,16 +330,16 @@ class AIUser(
 
         return True
 
-    def is_good_text_message(self, message: discord.Message) -> bool:
+    async def is_good_text_message(self, message: discord.Message) -> bool:
         if SINGULAR_MENTION_PATTERN.match(message.content):
             logger.debug(
                 f"Skipping singular mention message {message.id} in {message.guild.name}"
             )
             return False
 
-        if 1 <= len(message.content) < MIN_MESSAGE_LENGTH:
+        if 1 <= len(message.content) < (await self.config.guild(message.guild).messages_min_length()):
             logger.debug(
-                f"Skipping short message {message.id} in {message.guild.name}")
+                f"Skipping too short message {message.id} in {message.guild.name}")
             return False
 
         if len(message.content.split()) > MAX_MESSAGE_LENGTH:
@@ -385,8 +394,8 @@ class AIUser(
     async def _log_request_prompt(self, request: httpx.Request):
         if not logger.isEnabledFor(logging.DEBUG):
             return
-
-        if request.url.path != "/v1/chat/completions":
+        endpoint = request.url.path.split("/")[-1]
+        if endpoint != "completions":
             return
 
         bytes = await request.aread()
@@ -394,6 +403,17 @@ class AIUser(
         messages = request.get("messages", {})
         if not messages:
             return
+
+        # truncate messages image uri
+        last = messages[-1]
+        if isinstance(last.get("content"), list):
+            for content_item in last['content']:
+                if 'image_url' in content_item:
+                    image_url = content_item['image_url']['url']
+                    point = image_url.find(";base64,") + len(";base64,")
+                    short_data = image_url[point:point+20] + "..."
+                    content_item['image_url']['url'] = f"data:{image_url[:point]}{short_data}"
+
         logger.debug(
             f"Senting request with prompt: \n{json.dumps(messages, indent=4)}"
         )

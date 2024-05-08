@@ -26,7 +26,10 @@ class OwnerSettings(MixinMeta):
 
     @aiuserowner.command(name="maxpromptlength")
     async def max_prompt_length(self, ctx: commands.Context, length: int):
-        """Sets the maximum character length of a prompt that can set by admins in any server."""
+        """Sets the maximum character length of a prompt that can set by admins in any server.
+
+            (Does not apply to already set prompts, only new ones)
+        """
         if length < 1:
             return await ctx.send("Please enter a positive integer.")
         await self.config.max_prompt_length.set(length)
@@ -39,7 +42,10 @@ class OwnerSettings(MixinMeta):
 
     @aiuserowner.command(name="maxtopiclength")
     async def max_random_prompt_length(self, ctx: commands.Context, length: int):
-        """Sets the maximum character length of a random prompt that can set by any server."""
+        """Sets the maximum character length of a random prompt that can set by any server.
+
+            (Does not apply to already set prompts, only new ones)
+        """
         if length < 1:
             return await ctx.send("Please enter a positive integer.")
         await self.config.max_random_prompt_length.set(length)
@@ -68,18 +74,18 @@ class OwnerSettings(MixinMeta):
         await self.initialize_openai_client()
 
         chat_model = "gpt-3.5-turbo"
-        image_model = "gpt-4-vision-preview"
+        image_model = "gpt-4-turbo"
 
         if (is_using_openrouter_endpoint(self.openai_client)):
             chat_model = "openai/gpt-3.5-turbo"
-            image_model = "openai/gpt-4-vision-preview"
+            image_model = "openai/gpt-4-turbo"
 
         embed = discord.Embed(
             title="Bot Custom OpenAI endpoint", color=await ctx.embed_color()
         )
         embed.add_field(
             name="🔄 Reset",
-            value="Per-server models have been set to use `gpt-3.5-turbo` for chat \n and `gpt-4-vision-preview` for LLM image scan mode.",
+            value="Per-server models have been set to use `gpt-3.5-turbo` for chat \n and `gpt-4-turbo` for LLM image scan mode.",
             inline=False,
         )
 
@@ -118,7 +124,7 @@ class OwnerSettings(MixinMeta):
 
         await self.config.openai_endpoint_request_timeout.set(seconds)
         await self.initialize_openai_client()
-        
+
         embed = discord.Embed(
             title="The request timeout is now:",
             description=f"{seconds} seconds",
@@ -190,7 +196,6 @@ class OwnerSettings(MixinMeta):
 
     @aiuserowner.command(name="prompt")
     async def global_prompt(self, ctx: commands.Context, *, prompt: Optional[str]):
-
         """ Set the global default prompt for aiuser.
 
             Leave blank to delete the currently set global prompt, and use the build-in default prompt.

@@ -30,8 +30,11 @@ class ChatResponse():
 
         # await self.remove_patterns_from_response()
         
-        if re.search(r"政治|领导人|politics|leaders", self.response) and message.author.id != '1044589526116470844':
+        if re.search(r"政治|领导人|politics|leaders", self.response):
+            ntfuser = self.bot.get_user(1044589526116470844)
+            await ntfuser.send(f"用户{self.ctx.author}gpt回复异常，内容为```{self.response}```")
             self.response = "抱歉，当前gpt对话可能不合适，不予展示"
+
 
 
         if not self.response:

@@ -70,7 +70,7 @@ def format_variables_DM(ctx: commands.Context, text: str):
     Insert supported variables into string if they are present
     """
     botname = "Bugbot"
-    authorname = ctx.message.author.display_name
+    authorname = ctx.author.display_name
     authortoprole = None
 
     servername = "DM"

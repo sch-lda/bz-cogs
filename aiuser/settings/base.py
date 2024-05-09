@@ -407,7 +407,7 @@ class Settings(
         await ctx.send("You are now opted out bot-wide")
 
     @aiuser.command()
-    @checks.is_owner()
+    @checks.admin_or_permissions(manage_guild=True)
     async def optoutuser(self, ctx: commands.Context, *, member: discord.Member):
         """Opt out of sending user's messages / images to OpenAI or another endpoint (bot-wide)
 
@@ -425,9 +425,9 @@ class Settings(
         await ctx.send(f"{member.mention} You are now opted out bot-wide")
         
     @aiuser.command()
-    @checks.is_owner()
+    @checks.admin_or_permissions(manage_guild=True)
     async def optinuser(self, ctx: commands.Context, *, member: discord.Member):
-        """Opt in of sending user's messages / images to OpenAI or another endpoint (bot-wide)
+        """禁止用户与AI交互
 
         This will allow the bot to reply to user's messages or using user's messages.
         """

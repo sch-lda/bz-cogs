@@ -33,10 +33,13 @@ class ChatResponse():
         # await self.remove_patterns_from_response()
         
         if re.search(r"政治|领导人|politics|leaders", self.response):
+            logger.info(f"用户 {self.ctx.author} ({self.ctx.author.id})AI回复异常，内容为{self.response}")
             ntfuser = self.bot.get_user(1044589526116470844)
-            await ntfuser.send(f"用户{self.ctx.author}gpt回复异常，内容为```{self.response}```")
-            self.response = "抱歉，当前gpt对话可能不合适，不予展示"
-
+            await ntfuser.send(f"用户 {self.ctx.author} AI回复异常，内容为```{self.response}```")
+            self.response = "抱歉，当前AI回复可能不合适，不予展示"
+        else:
+            logger.info(f"用户 {self.ctx.author} ({self.ctx.author.id}) 触发AI回复，内容为{self.response}")
+            
         if not self.response:
             return False
 

@@ -231,7 +231,6 @@ class AIUser(
         
         if self.bot.user in message.mentions:
             if (message.author.id in await self.config.optout()):
-                await message.channel.send("您在排除列表,bugbot不会收集您的消息!", delete_after=30)
                 return False
             else:
                 await self.send_response(ctx)

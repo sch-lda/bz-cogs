@@ -67,6 +67,8 @@ IMAGE_UPLOAD_LIMIT = 2 * (1024 * 1024)  # 2 MB
 
 # models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    "deepseek-chat",
+    "deepseek-coder",
     "gpt-4",
     "gpt-4-turbo",
     "gpt-4-1106-preview",

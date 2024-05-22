@@ -190,7 +190,7 @@ class MessagesList:
         rm_count = 0
         for past_message in past_messages:
             # logger.info(f"历史消息：{past_message.content}")
-            if "猫娘" in past_message.content or "奴" in past_message.content or "狐娘" in past_message.content or "主人" in past_message.content or "规定" in past_message.content or "遵守" in past_message.content or "惩罚" in past_message.content or "扮演" in past_message.content or "伦理" in past_message.content or "道德" in past_message.content or "无害" in past_message.content or "摸摸" in past_message.content or "Polic" in past_message.content or "prompts" in past_message.content or "fake" in past_message.content:
+            if "猫娘" in past_message.content or "奴" in past_message.content or "【】" in past_message.content or "狐娘" in past_message.content or "主人" in past_message.content or "规定" in past_message.content or "遵守" in past_message.content or "惩罚" in past_message.content or "扮演" in past_message.content or "伦理" in past_message.content or "道德" in past_message.content or "无害" in past_message.content or "摸摸" in past_message.content or "Polic" in past_message.content or "prompts" in past_message.content or "fake" in past_message.content:
                 past_messages.remove(past_message)
                 rm_count += 1
                 # logger.info(f"移除消息：{past_message.content}")

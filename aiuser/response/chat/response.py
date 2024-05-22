@@ -32,7 +32,7 @@ class ChatResponse():
 
         # await self.remove_patterns_from_response()
         
-        if re.search(r"政治|领导人|politics|leaders", self.response):
+        if re.search(r"政治|领导人|politics|leaders|roleplay|role-play|禁止任何形式的角色扮演", self.response):
             logger.info(f"用户 {self.ctx.author} ({self.ctx.author.id})AI回复异常，内容为{self.response}")
             ntfuser = self.bot.get_user(1044589526116470844)
             await ntfuser.send(f"用户 {self.ctx.author} AI回复异常，内容为```{self.response}```")

@@ -196,7 +196,7 @@ class MessagesList:
                 # logger.info(f"移除消息：{past_message.content}")
 
         if rm_count > 0:
-            await self.init_message.channel.send(f"[AI回复]已排除{rm_count}条可能不合适的历史消息", delete_after=30)
+            await self.init_message.channel.send(f"[AI回复]已排除{rm_count}条可能不合适的历史消息", delete_after=10)
 
         if not await self._is_valid_time_gap(self.init_message, past_messages[0], max_seconds_gap):
             return

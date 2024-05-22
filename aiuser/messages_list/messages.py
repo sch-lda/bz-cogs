@@ -183,9 +183,20 @@ class MessagesList:
             self.start_time + timedelta(seconds=1) if self.start_time else None
         )
 
-        past_messages = await self._get_past_messages(limit, start_time)
+        past_messages = await self._get_past_messages(limit, start_time) 
         if not past_messages:
             return
+        
+        rm_count = 0
+        for past_message in past_messages:
+            # logger.info(f"历史消息：{past_message.content}")
+            if "猫娘" in past_message.content or "奴" in past_message.content or "狐娘" in past_message.content or "主人" in past_message.content or "规定" in past_message.content or "遵守" in past_message.content or "惩罚" in past_message.content or "扮演" in past_message.content or "伦理" in past_message.content or "道德" in past_message.content or "无害" in past_message.content or "摸摸" in past_message.content or "Polic" in past_message.content or "prompts" in past_message.content or "fake" in past_message.content:
+                past_messages.remove(past_message)
+                rm_count += 1
+                # logger.info(f"移除消息：{past_message.content}")
+
+        if rm_count > 0:
+            await self.init_message.channel.send(f"[AI回复]已排除{rm_count}条可能不合适的历史消息", delete_after=30)
 
         if not await self._is_valid_time_gap(self.init_message, past_messages[0], max_seconds_gap):
             return
@@ -265,6 +276,8 @@ class MessagesList:
         model = model.split("/")[-1]
         if model in OTHER_MODELS_LIMITS:
             limit = OTHER_MODELS_LIMITS.get(model, limit)
+        if "deep" in model:
+            limit = 31000
         return limit
 
     @staticmethod

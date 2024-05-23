@@ -170,7 +170,7 @@ class AIUser(
         *,
         text: app_commands.Range[str, 0, MAX_MESSAGE_LENGTH],
     ):
-        """与deepseek模型交谈"""
+        """与大语言模型交谈"""
         await inter.response.defer()
 
         ctx = await commands.Context.from_interaction(inter)
@@ -200,7 +200,7 @@ class AIUser(
 
     @commands.command()
     async def chat(self, ctx: commands.Context):
-        """与deepseek语言模型交谈."""
+        """与大语言语言模型交谈."""
 
         rate_limit_reset = datetime.strptime(
             await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"

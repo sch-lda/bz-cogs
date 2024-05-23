@@ -33,7 +33,7 @@ DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS = [
     "image", "images", "picture", "pictures", "photo", "photos", "photograph", "photographs"]
 DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS = ["yourself", "you"]
 DEFAULT_REPLY_PERCENT = 1.0
-DEFAULT_MIN_MESSAGE_LENGTH = 2
+DEFAULT_MIN_MESSAGE_LENGTH = 1
 
 ### END DEFAULTS ###
 
@@ -164,4 +164,14 @@ OTHER_MODELS_LIMITS = {
     "cinematika-7b": 7000,
     "gemma-7b-it": 7000,
     "llama-3-8b-instruct": 7000,
+    "moonshot-v1-128k": 123000,
+    "yi-large": 16000,
+    "glm-4": 123000,
+    "glm-3-turbo": 8192,
+    "Baichuan2-Turbo-192k": 190000,
+    "Baichuan3-Turbo-128k": 123000,
+    "Baichuan3-Turbo": 123000,
+    "Baichuan4": 123000,
+    "deepseek-chat": 123000,
+    "deepseek-coder": 123000
 }

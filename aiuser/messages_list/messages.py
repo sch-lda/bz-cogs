@@ -280,8 +280,6 @@ class MessagesList:
         model = model.split("/")[-1]
         if model in OTHER_MODELS_LIMITS:
             limit = OTHER_MODELS_LIMITS.get(model, limit)
-        if "deep" in model:
-            limit = 31000
         return limit
 
     @staticmethod

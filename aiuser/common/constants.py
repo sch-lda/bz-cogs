@@ -86,7 +86,15 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     "openai/gpt-3.5-turbo",
     "openai/gpt-3.5-turbo-1106",
     "openai/gpt-3.5-turbo-0613",
-    "openai/gpt-3.5-turbo-0125"
+    "openai/gpt-3.5-turbo-0125",
+    "moonshot-v1-128k",
+    "yi-large",
+    "glm-4",
+    "glm-3-turbo",
+    "Baichuan2-Turbo-192k",
+    "Baichuan3-Turbo-128k",
+    "Baichuan3-Turbo",
+    "Baichuan4"
 ]
 VISION_SUPPORTED_MODELS = [
     "gpt-4o",

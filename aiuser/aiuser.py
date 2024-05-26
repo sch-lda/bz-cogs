@@ -176,6 +176,10 @@ class AIUser(
         ctx = await commands.Context.from_interaction(inter)
         ctx.message.content = text
 
+        if ctx.guild.id == 388227343862464513:
+            if ctx.channel.id != 976462395427921940: # off-topic
+                return await ctx.send("请在 https://discord.com/channels/388227343862464513/976462395427921940 频道使用此命令.", ephemeral=True, delete_after=10)
+            
         if not await self.is_common_valid_reply(ctx):
             return await ctx.send(
                 "您没有权限使用!", ephemeral=True
@@ -200,8 +204,11 @@ class AIUser(
 
     @commands.command()
     async def chat(self, ctx: commands.Context):
-        """与大语言语言模型交谈."""
-
+        """与大语言模型交谈."""
+        if ctx.guild.id == 388227343862464513:
+            if ctx.channel.id != 976462395427921940: # off-topic
+                return await ctx.send("请在 https://discord.com/channels/388227343862464513/976462395427921940 频道使用此命令.", ephemeral=True, delete_after=10)
+            
         rate_limit_reset = datetime.strptime(
             await self.config.ratelimit_reset(), "%Y-%m-%d %H:%M:%S"
         )
@@ -233,6 +240,10 @@ class AIUser(
             if (message.author.id in await self.config.optout()):
                 return False
             else:
+                if ctx.guild.id == 388227343862464513:
+                    if ctx.channel.id != 976462395427921940: # off-topic
+                        return await ctx.send("请在 https://discord.com/channels/388227343862464513/976462395427921940 频道与Bugbot交谈.", ephemeral=True, delete_after=10)
+                    
                 await self.send_response(ctx)
                 return
             

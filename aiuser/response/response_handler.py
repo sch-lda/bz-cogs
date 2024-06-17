@@ -41,11 +41,20 @@ class ResponseHandler(MixinMeta):
         chat = None
         if ctx.guild is not None:
             if await self.config.guild(ctx.guild).function_calling() and messages_list.model in FUNCTION_CALLING_SUPPORTED_MODELS:
+                usermodel = await self.config.user(self.ctx.author).model()
+                if usermodel is not None:
+                    messages_list.model = usermodel
                 chat = OpenAI_Functions_API_Generator(self, ctx, messages_list)
             else:
+                usermodel = await self.config.user(self.ctx.author).model()
+                if usermodel is not None:
+                    messages_list.model = usermodel
                 chat = OpenAI_API_Generator(self, ctx, messages_list)
         else:
             messages_list.model = await self.config.model()
+            usermodel = await self.config.user(self.ctx.author).model()
+            if usermodel is not None:
+                messages_list.model = usermodel
             chat = OpenAI_API_Generator_DM(self, ctx, messages_list)
 
         async with ctx.message.channel.typing():

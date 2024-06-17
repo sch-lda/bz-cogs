@@ -315,6 +315,33 @@ class Settings(
             - `model` The model to use eg. `gpt-4`
         """
         models_list = await self.openai_client.models.list()
+        avaliable_models = [
+            "@cf/qwen/qwen1.5-0.5b-chat",
+            "@cf/qwen/qwen1.5-1.8b-chat",
+            "@cf/qwen/qwen1.5-7b-chat-awq",
+            "@cf/qwen/qwen1.5-14b-chat-awq",
+            "@cf/meta/llama-2-7b-chat-fp16",
+            "@cf/meta/llama-2-7b-chat-int8",
+            "@cf/mistral/mistral-7b-instruct-v0.1",
+            "@hf/thebloke/deepseek-coder-6.7b-base-awq",
+            "@hf/thebloke/llama-2-13b-chat-awq",
+            "@hf/thebloke/deepseek-coder-6.7b-instruct-awq",
+            "@cf/google/gemma-7b-it-lora",
+            "@cf/meta/llama-3-8b-instruct-awq",
+            "@cf/microsoft/phi-2",
+            "@hf/google/gemma-7b-it",
+            "gpt-3.5-turbo",
+            "gpt-3.5-turbo-1106",
+            "gpt-3.5-turbo-0613",
+            "gpt-3.5-turbo-0125",
+            "yi-large",
+            "Baichuan2-Turbo-192k",
+            "Baichuan3-Turbo-128k",
+            "Baichuan3-Turbo",
+            "Baichuan4"
+        ]
+        if model not in avaliable_models and ctx.author.id != self.bot.owner_id:
+            return await ctx.send(f":warning: 无效的模型!\n请使用以下模型之一: {', '.join(avaliable_models)}", delete_after=30)
         await self.config.user(ctx.author).model.set(model)
         await ctx.send(f"你的AI模型已设置为: {model}")
 
@@ -330,6 +357,7 @@ class Settings(
         **Arguments**
             - `model` The model to use eg. `gpt-4`
         """
+        await self.config.clear_all_users()
         await ctx.message.add_reaction("🔄")
         models_list = await self.openai_client.models.list()
         await ctx.message.remove_reaction("🔄", ctx.me)

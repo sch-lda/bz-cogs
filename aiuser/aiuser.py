@@ -67,7 +67,7 @@ class AIUser(
         }
 
         default_user = {
-            "model": "gpt-3.5-turbo",
+            "model": "",
         }
 
         default_guild = {
@@ -127,7 +127,7 @@ class AIUser(
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
         self.config.register_user(**default_user)
-        
+
     async def cog_load(self):
         await self.initialize_openai_client()
 

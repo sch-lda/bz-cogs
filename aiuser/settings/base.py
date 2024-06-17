@@ -315,7 +315,7 @@ class Settings(
             - `model` The model to use eg. `gpt-4`
         """
         models_list = await self.openai_client.models.list()
-        await self.config.guild(ctx.author).model.set(model)
+        await self.config.user(ctx.author).model.set(model)
         await ctx.send(f"你的AI模型已设置为: {model}")
 
 

@@ -181,6 +181,11 @@ class AIUser(
         ctx = await commands.Context.from_interaction(inter)
         ctx.message.content = text
 
+        if ctx.guild is None:
+            return await ctx.send(
+                "在私聊中请直接发送问题,无需使用斜线命令", ephemeral=True
+            )
+        
         if ctx.guild.id == 388227343862464513:
             if ctx.channel.id != 976462395427921940 and not await self.bot.is_automod_immune(ctx): # off-topic
                 return await ctx.send("请在 https://discord.com/channels/388227343862464513/976462395427921940 频道使用此命令.", ephemeral=True, delete_after=10)

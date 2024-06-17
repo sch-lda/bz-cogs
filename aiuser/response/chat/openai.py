@@ -41,7 +41,7 @@ class OpenAI_API_Generator(Chat_Generator):
         kwargs = await self.get_custom_parameters()
         pmodel = self.model
         usermodel = await self.config.user(self.ctx.author).model()
-        if usermodel is not None:
+        if usermodel != "":
             pmodel = usermodel
         if "gpt-3.5-turbo-instruct" in pmodel:
             prompt = "\n".join(message["content"] for message in self.messages)
@@ -108,7 +108,7 @@ class OpenAI_API_Generator_DM(Chat_Generator):
         kwargs = await self.get_custom_parameters()
         pmodel = self.model
         usermodel = await self.config.user(self.ctx.author).model()
-        if usermodel is not None:
+        if usermodel != "":
             pmodel = usermodel
         if "gpt-3.5-turbo-instruct" in pmodel:
             prompt = "\n".join(message["content"] for message in self.messages)

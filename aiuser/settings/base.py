@@ -309,6 +309,18 @@ class Settings(
         return await ctx.send(embed=embed)
 
     @aiuser.command()
+    async def user_model(self, ctx: commands.Context, model: str):
+        """修改适用于自己的模型
+
+        **参数**
+            - `model` The model to use eg. `gpt-4`
+        """
+        models_list = await self.openai_client.models.list()
+        await self.config.guild(ctx.author).model.set(model)
+        await ctx.send(f"你的AI模型已设置为: {model}")
+
+
+    @aiuser.command()
     @checks.is_owner()
     async def model(self, ctx: commands.Context, model: str):
         """Changes chat completion model

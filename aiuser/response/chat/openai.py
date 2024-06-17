@@ -39,17 +39,20 @@ class OpenAI_API_Generator(Chat_Generator):
 
     async def request_openai(self):
         kwargs = await self.get_custom_parameters()
-
-        if "gpt-3.5-turbo-instruct" in self.model:
+        pmodel = self.model
+        usermodel = await self.config.user(self.ctx.author).model()
+        if usermodel is not None:
+            pmodel = usermodel
+        if "gpt-3.5-turbo-instruct" in pmodel:
             prompt = "\n".join(message["content"] for message in self.messages)
             response = await self.openai_client.completions.create(
-                model=self.model, prompt=prompt, **kwargs
+                model=pmodel, prompt=prompt, **kwargs
             )
             completion = response.choices[0].message.content
         else:
             response = (
                 await self.openai_client.chat.completions.create(
-                    model=self.model, messages=self.messages, **kwargs
+                    model=pmodel, messages=self.messages, **kwargs
                 )
             )
 
@@ -103,17 +106,20 @@ class OpenAI_API_Generator_DM(Chat_Generator):
 
     async def request_openai(self):
         kwargs = await self.get_custom_parameters()
-
-        if "gpt-3.5-turbo-instruct" in self.model:
+        pmodel = self.model
+        usermodel = await self.config.user(self.ctx.author).model()
+        if usermodel is not None:
+            pmodel = usermodel
+        if "gpt-3.5-turbo-instruct" in pmodel:
             prompt = "\n".join(message["content"] for message in self.messages)
             response = await self.openai_client.completions.create(
-                model=self.model, prompt=prompt, **kwargs
+                model=pmodel, prompt=prompt, **kwargs
             )
             completion = response.choices[0].message.content
         else:
             response = (
                 await self.openai_client.chat.completions.create(
-                    model=self.model, messages=self.messages, **kwargs
+                    model=pmodel, messages=self.messages, **kwargs
                 )
             )
 

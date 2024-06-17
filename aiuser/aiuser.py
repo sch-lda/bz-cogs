@@ -66,6 +66,10 @@ class AIUser(
             "custom_text_prompt": None,
         }
 
+        default_user = {
+            "model": "gpt-3.5-turbo",
+        }
+
         default_guild = {
             "optin_by_default": False,
             "optin_disable_embed": False,
@@ -122,7 +126,8 @@ class AIUser(
         self.config.register_channel(**default_channel)
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
-
+        self.config.register_user(**default_user)
+        
     async def cog_load(self):
         await self.initialize_openai_client()
 

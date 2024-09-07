@@ -8,8 +8,8 @@ from typing import Callable, Coroutine
 from discord import Message
 from openai import AsyncOpenAI
 from redbot.core import Config, commands
-from aiuser.common.constants import OPENROUTER_URL, YOUTUBE_URL_PATTERN
 
+from aiuser.common.constants import OPENROUTER_URL, YOUTUBE_URL_PATTERN
 from aiuser.functions.tool_call import ToolCall
 
 logger = logging.getLogger("red.bz_cogs.aiuser")
@@ -30,16 +30,20 @@ def to_thread(timeout=300):
     return decorator
 
 
-def format_variables(ctx: commands.Context, text: str):
+async def format_variables(ctx: commands.Context, text: str):
     """
     Insert supported variables into string if they are present
     """
     botname = ctx.message.guild.me.nick or ctx.bot.user.display_name
+    app_info = await ctx.bot.application_info()
+    botowner = app_info.owner.name
     authorname = ctx.message.author.display_name
     authortoprole = ctx.message.author.top_role.name
+    authormention = ctx.message.author.mention
 
     servername = ctx.guild.name
     channelname = ctx.message.channel.name
+    channeltopic = ctx.message.channel.topic
     currentdate = datetime.today().strftime("%Y/%m/%d")
     currentweekday = datetime.today().strftime("%A")
     currenttime = datetime.today().strftime("%H:%M")
@@ -51,11 +55,14 @@ def format_variables(ctx: commands.Context, text: str):
     try:
         res = text.format(
             botname=botname,
+            botowner=botowner,
             authorname=authorname,
             authortoprole=authortoprole,
+            authormention=authormention,
             servername=servername,
             serveremojis=serveremojis,
             channelname=channelname,
+            channeltopic=channeltopic,
             currentdate=currentdate,
             currentweekday=currentweekday,
             currenttime=currenttime,
@@ -89,19 +96,30 @@ def is_using_openrouter_endpoint(client: AsyncOpenAI):
     return str(client.base_url).startswith(OPENROUTER_URL)
 
 
-async def get_enabled_tools(config: Config, ctx: commands.Context) -> list[ToolCall]:
-    from aiuser.functions.noresponse.tool_call import \
-        NoResponseToolCall
+async def get_enabled_tools(config: Config, ctx: commands.Context) -> list:
+    from aiuser.functions.noresponse.tool_call import NoResponseToolCall
+    from aiuser.functions.scrape.tool_call import ScrapeToolCall
     from aiuser.functions.search.tool_call import SearchToolCall
-    from aiuser.functions.weather.tool_call import (
-        IsDaytimeToolCall, LocalWeatherToolCall, LocationWeatherToolCall)
+    from aiuser.functions.weather.tool_call import (IsDaytimeToolCall,
+                                                    LocalWeatherToolCall,
+                                                    LocationWeatherToolCall)
+
+    tool_classes = {
+        SearchToolCall.function_name: SearchToolCall,
+        LocationWeatherToolCall.function_name: LocationWeatherToolCall,
+        LocalWeatherToolCall.function_name: LocalWeatherToolCall,
+        IsDaytimeToolCall.function_name: IsDaytimeToolCall,
+        NoResponseToolCall.function_name: NoResponseToolCall,
+        ScrapeToolCall.function_name: ScrapeToolCall,
+    }
+
+    enabled_tool_names: list = await config.guild(ctx.guild).function_calling_functions()
+
     tools = []
-    if await config.guild(ctx.guild).function_calling_search():
-        tools.append(SearchToolCall(config=config, ctx=ctx))
-    if await config.guild(ctx.guild).function_calling_weather():
-        tools.append(LocationWeatherToolCall(config=config, ctx=ctx))
-        tools.append(LocalWeatherToolCall(config=config, ctx=ctx))
-        tools.append(IsDaytimeToolCall(config=config, ctx=ctx))
-    if await config.guild(ctx.guild).function_calling_no_response():
-        tools.append(NoResponseToolCall(config=config, ctx=ctx))
+
+    for tool_name in enabled_tool_names:
+        tool_class = tool_classes.get(tool_name)
+        if tool_class:
+            tools.append(tool_class(config=config, ctx=ctx))
+
     return tools

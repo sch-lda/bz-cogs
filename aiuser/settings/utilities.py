@@ -31,7 +31,9 @@ def get_config_attribute(config, mention_type: MentionType, ctx: commands.Contex
 
 
 async def get_tokens(config: Config, ctx: commands.Context, prompt: str) -> int:
-    prompt = format_variables(ctx, prompt)  # to provide a better estimate
+    if not prompt:
+        return 0
+    prompt = await format_variables(ctx, prompt)  # to provide a better estimate
     try:
         encoding = tiktoken.encoding_for_model(await config.guild(ctx.guild).model())
     except KeyError:
@@ -40,8 +42,6 @@ async def get_tokens(config: Config, ctx: commands.Context, prompt: str) -> int:
 
 
 def truncate_prompt(prompt: str) -> str:
-    if not prompt:
-        return "None"
     if len(prompt) > 1900:
-        return prompt[:1900] + "..." 
+        return prompt[:1900] + "..."
     return prompt

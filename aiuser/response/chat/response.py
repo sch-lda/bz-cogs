@@ -4,16 +4,17 @@ import random
 import re
 from datetime import datetime, timezone
 
+from discord import AllowedMentions
 from redbot.core import Config, commands
 
 from aiuser.common.utilities import to_thread
-from aiuser.response.chat.generator import Chat_Generator
+from aiuser.response.chat.generator import ChatGenerator
 
 logger = logging.getLogger("red.bz_cogs.aiuser")
 
 
 class ChatResponse():
-    def __init__(self, ctx: commands.Context, config: Config, chat: Chat_Generator):
+    def __init__(self, ctx: commands.Context, config: Config, chat: ChatGenerator):
         self.ctx = ctx
         self.config = config
         self.response = None
@@ -33,24 +34,26 @@ class ChatResponse():
         if not self.response:
             return False
 
+        allowed_mentions = AllowedMentions(everyone=False, roles=False, users=[message.author])
+
         if len(self.response) >= 2000:
-            chunks = [self.response[i:i+2000]
+            chunks = [self.response[i:i + 2000]
                       for i in range(0, len(self.response), 2000)]
             for chunk in chunks:
-                await self.ctx.send(chunk)
+                await self.ctx.send(chunk, allowed_mentions=allowed_mentions)
         elif self.can_reply and await self.is_reply():
-            await message.reply(self.response, mention_author=False)
+            await message.reply(self.response, mention_author=False, allowed_mentions=allowed_mentions)
         elif self.ctx.interaction:
-            await self.ctx.interaction.followup.send(self.response)
+            await self.ctx.interaction.followup.send(self.response, allowed_mentions=allowed_mentions)
         else:
-            await self.ctx.send(self.response)
+            await self.ctx.send(self.response, allowed_mentions=allowed_mentions)
         return True
 
     async def remove_patterns_from_response(self) -> str:
 
         @to_thread(timeout=5)
         def substitute(pattern: re.Pattern, response):
-            response = (pattern.sub('', response).strip(' \n":'))
+            response = (pattern.sub('', response))
             return response
 
         patterns = await self.config.guild(self.ctx.guild).removelist_regexes()
@@ -78,11 +81,13 @@ class ChatResponse():
         for pattern in patterns:
             try:
                 patterns.append(re.compile(pattern, re.IGNORECASE))
-            except:
+            except Exception:
                 logger.warning(
                     f"Failed to compile regex pattern \"{pattern}\" for response \"{self.response}\", continuing...", exc_info=True)
 
-        response = self.response.strip(' "')
+        response = self.response
+        response = response.strip(' \n')
+
         for pattern in patterns:
             try:
                 response = await substitute(pattern, response)
@@ -90,8 +95,7 @@ class ChatResponse():
                 logger.warning(
                     f"Timed out after {5} seconds while applying regex pattern \"{pattern.pattern}\" in response \"{self.response}\" \
                         Please check the regex pattern for catastrophic backtracking. Continuing...")
-            if response.count('"') == 1:
-                response = response.replace('"', '')
+
         self.response = response
 
     async def is_reply(self):
@@ -101,7 +105,7 @@ class ChatResponse():
         message = self.ctx.message
         try:
             await self.ctx.fetch_message(message.id)
-        except:
+        except Exception:
             return False
 
         time_diff = datetime.now(timezone.utc) - message.created_at
@@ -113,7 +117,7 @@ class ChatResponse():
             async for last_message in message.channel.history(limit=1):
                 if last_message.author == message.guild.me:
                     return True
-        except:
+        except Exception:
             pass
 
         return False

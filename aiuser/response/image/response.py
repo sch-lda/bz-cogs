@@ -8,7 +8,7 @@ from aiuser.abc import MixinMeta
 from aiuser.common.constants import (IMAGE_REQUEST_REPLY_PROMPT,
                                      IMAGE_REQUEST_SD_GEN_PROMPT)
 from aiuser.messages_list.messages import create_messages_list
-from aiuser.response.chat.openai import OpenAI_API_Generator
+from aiuser.response.chat.openai import OpenAIAPIGenerator
 from aiuser.response.chat.response import ChatResponse
 from aiuser.response.image.generator import ImageGenerator
 
@@ -34,7 +34,7 @@ class ImageResponse():
             if image is None:
                 return False
 
-        except:
+        except Exception:
             logger.exception(f"Error while attempting to generate image")
             return False
 
@@ -42,10 +42,9 @@ class ImageResponse():
         saved_caption = await self._format_saved_caption(caption)
 
         message_list = await create_messages_list(self.cog, self.ctx)
-        await message_list.add_history()
         await message_list.add_system(saved_caption, index=len(message_list) + 1)
         await message_list.add_system(IMAGE_REQUEST_REPLY_PROMPT, index=len(message_list) + 1)
-        chat = OpenAI_API_Generator(self.cog, self.ctx, message_list)
+        chat = OpenAIAPIGenerator(self.cog, self.ctx, message_list)
         response = ChatResponse(self.ctx, self.config, chat)
 
         if not (await response.send()):
@@ -98,5 +97,5 @@ class ImageResponse():
         for emoji in emojis:
             try:
                 await self.message.remove_reaction(emoji, self.ctx.me)
-            except:
+            except Exception:
                 pass

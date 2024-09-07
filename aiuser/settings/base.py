@@ -13,6 +13,7 @@ from aiuser.common.utilities import (get_enabled_tools,
                                      is_using_openai_endpoint,
                                      is_using_openrouter_endpoint)
 from aiuser.settings.functions import FunctionCallingSettings
+from aiuser.settings.history import HistorySettings
 from aiuser.settings.image_request import ImageRequestSettings
 from aiuser.settings.image_scan import ImageScanSettings
 from aiuser.settings.owner import OwnerSettings
@@ -29,6 +30,7 @@ class Settings(
     PromptSettings,
     ImageScanSettings,
     ImageRequestSettings,
+    HistorySettings,
     ResponseSettings,
     TriggerSettings,
     OwnerSettings,
@@ -37,7 +39,7 @@ class Settings(
     MixinMeta,
 ):
     @commands.group(aliases=["ai_user"])
-    @commands.bot_has_permissions(embed_links=True)
+    @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     @commands.guild_only()
     async def aiuser(self, _):
         """Utilize OpenAI to reply to messages and images in approved channels and by opt-in users"""
@@ -232,14 +234,14 @@ class Settings(
 
         **Arguments**
             - `mention` (Optional) A mention of a user, role, or channel
-            - `percent` (Optional) A number between 1 and 100, if omitted, will reset to using other percentages
+            - `percent` (Optional) A number between 0 and 100, if omitted, will reset to using other percentages
         (Setting is per server)
         """
         mention_type = get_mention_type(mention)
         config_attr = get_config_attribute(self.config, mention_type, ctx, mention)
-        if not percent and mention_type == MentionType.SERVER:
+        if percent == None and mention_type == MentionType.SERVER:
             return await ctx.send(":warning: No percent provided")
-        if percent:
+        if percent or mention_type == MentionType.SERVER:
             await config_attr.reply_percent.set(percent / 100)
             desc = f"{percent:.2f}%"
         else:
@@ -317,9 +319,6 @@ class Settings(
         **Arguments**
             - `model` The model to use eg. `gpt-4`
         """
-        if not self.openai_client:
-            await self.initalize_openai(ctx)
-
         await ctx.message.add_reaction("🔄")
         models_list = await self.openai_client.models.list()
         await ctx.message.remove_reaction("🔄", ctx.me)
@@ -333,12 +332,12 @@ class Settings(
         if model == "list":
             return await self._paginate_models(ctx, models)
 
-        if await self.config.guild(ctx.guild).function_calling() and model not in FUNCTION_CALLING_SUPPORTED_MODELS:
-            return await ctx.send(":warning: Can not select model that with no build-in support for function calling!\nSwitch function calling off or select a model that supports function calling.")
-
         if model not in models:
             await ctx.send(":warning: Not a valid model!")
             return await self._paginate_models(ctx, models)
+
+        if await self.config.guild(ctx.guild).function_calling() and model not in FUNCTION_CALLING_SUPPORTED_MODELS:
+            return await ctx.send(":warning: Can not select model not whitelisted for function calling!\nSwitch function calling off using `[p]aiuser functions toggle` or select a model that supports function calling.")
 
         await self.config.guild(ctx.guild).model.set(model)
         embed = discord.Embed(
@@ -379,7 +378,7 @@ class Settings(
     async def optin(self, ctx: commands.Context):
         """Opt in of sending your messages / images to OpenAI or another endpoint (bot-wide)
 
-        This will allow the bot to reply to your messages or using your messages.
+        This will allow the bot to reply to your messages or use your messages.
         """
         optin = await self.config.optin()
         if ctx.author.id in await self.config.optin():

@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from dataclasses import asdict
 from datetime import datetime, timedelta
 
@@ -22,11 +23,13 @@ OPTIN_EMBED_TITLE = ":information_source: AI User Opt-In / Opt-Out"
 
 
 async def create_messages_list(
-    cog: MixinMeta, ctx: commands.Context, prompt: str = None
+    cog: MixinMeta, ctx: commands.Context, prompt: str = None, history: bool = True
 ):
     """to manage messages in ChatML format"""
     thread = MessagesList(cog, ctx)
     await thread._init(prompt=prompt)
+    if history:
+        await thread.add_history()
     return thread
 
 
@@ -59,7 +62,7 @@ class MessagesList:
 
     async def _init(self, prompt=None):
         self.model = await self.config.guild(self.guild).model()
-        self.token_limit = self._get_token_limit(self.model)
+        self.token_limit = await self.config.guild(self.guild).custom_model_tokens_limit() or self._get_token_limit(self.model)
         try:
             self._encoding = tiktoken.encoding_for_model(self.model)
         except KeyError:
@@ -70,7 +73,7 @@ class MessagesList:
 
         bot_prompt = prompt or await self._pick_prompt()
 
-        await self.add_system(format_variables(self.ctx, bot_prompt))
+        await self.add_system(await format_variables(self.ctx, bot_prompt))
 
         if await self._check_if_inital_img():
             self.model = await self.config.guild(self.guild).scan_images_model()
@@ -142,16 +145,25 @@ class MessagesList:
             return
 
         for entry in converted:
+            if self.tokens > self.token_limit:
+                return
+
             self.messages.insert(index or 0, entry)
             self.messages_ids.add(message.id)
-            await self._add_tokens(entry.content)
+
+            if isinstance(entry.content, list):
+                for item in entry.content:
+                    if not isinstance(item, dict):
+                        continue
+                    if item.get("type") == "text":
+                        await self._add_tokens(item.get("text"))
+                    elif item.get("type") == "image_url":
+                        self.tokens += 255  # TODO: calculate actual image token cost
+            else:
+                await self._add_tokens(entry.content)
 
         # TODO: proper reply chaining
-        if (
-            message.reference
-            and isinstance(message.reference.resolved, discord.Message)
-            and message.author.id != self.bot.user.id
-        ):
+        if message.reference and isinstance(message.reference.resolved, discord.Message) and message.author.id != self.bot.user.id:
             await self.add_msg(message.reference.resolved, index=0)
 
     async def add_system(self, content: str, index: int = None):
@@ -165,7 +177,7 @@ class MessagesList:
         limit = await self.config.guild(self.guild).messages_backread()
         max_seconds_gap = await self.config.guild(self.guild).messages_backread_seconds()
         start_time: datetime = (
-            self.start_time + timedelta(seconds=1) if self.start_time else None
+            self.start_time - timedelta(seconds=1) if self.start_time else None
         )
 
         past_messages = await self._get_past_messages(limit, start_time)
@@ -175,12 +187,13 @@ class MessagesList:
         if not await self._is_valid_time_gap(self.init_message, past_messages[0], max_seconds_gap):
             return
 
-        users = await self._get_unopted_users(past_messages)
+        users = await self._get_unopted_users(past_messages[:10])
 
         await self._process_past_messages(past_messages, max_seconds_gap)
 
         if users and not await self.config.guild(self.guild).optin_disable_embed():
-            await self._send_optin_embed(users)
+            if (random.random() <= 0.33) or (len(users) > 3):
+                await self._send_optin_embed(users)
 
     async def _get_past_messages(self, limit, start_time):
         return [
@@ -193,13 +206,13 @@ class MessagesList:
             )
         ]
 
-    async def _get_unopted_users(self, past_messages):
+    async def _get_unopted_users(self, messages):
         users = set()
 
         if await self.config.guild(self.guild).optin_by_default():
             return users
 
-        for message in past_messages:
+        for message in messages:
             if (
                 (not message.author.bot)
                 and (message.author.id not in await self.config.optin())
@@ -220,6 +233,17 @@ class MessagesList:
             else:
                 await self.add_msg(past_messages[i])
                 break
+
+    async def _send_optin_embed(self, users):
+		return
+        users = ", ".join([user.mention for user in users])
+        embed = discord.Embed(
+            title=OPTIN_EMBED_TITLE,
+            color=await self.bot.get_embed_color(self.init_message),
+        )
+        view = OptView(self.config)
+        embed.description = f"{users}\nPlease select whether you want to opt into your Discord messages being sent to OpenAI or an external party, as part of this bot.\nThis will allow the bot to reply to your messages or use your messages.\nThis message will disappear if all users in the chat have made a choice."
+        await self.init_message.channel.send(embed=embed, view=view)
 
     def get_json(self):
         return [asdict(message) for message in self.messages]
@@ -246,7 +270,9 @@ class MessagesList:
             limit = 31000
         if "100k" in model or "claude" in model:
             limit = 99000
-        model = model.split("/")[-1]
+        if "llama-3.1" in model:
+            limit = 123000
+        model = model.split("/")[-1].split(":")[0]
         if model in OTHER_MODELS_LIMITS:
             limit = OTHER_MODELS_LIMITS.get(model, limit)
         return limit

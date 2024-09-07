@@ -25,7 +25,7 @@ class RandomMessageTask(MixinMeta):
         for guild_id, channels in self.channels_whitelist.items():
             try:
                 last, ctx = await self.get_discord_context(guild_id, channels)
-            except:
+            except Exception:
                 continue
 
             guild = last.guild
@@ -40,15 +40,15 @@ class RandomMessageTask(MixinMeta):
                     f"No random message topics were found in {guild.name}, skipping")
 
             prompt = await self.config.channel(channel).custom_text_prompt() or await self.config.guild(guild).custom_text_prompt() or await self.config.custom_text_prompt() or DEFAULT_PROMPT
-            messages_list = await create_messages_list(self, ctx, prompt=prompt)
-            topic = format_variables(
+            messages_list = await create_messages_list(self, ctx, prompt=prompt, history=False)
+            topic = await format_variables(
                 ctx, topics[random.randint(0, len(topics) - 1)])
             logger.debug(
                 f"Sending random message to #{channel.name} at {guild.name}")
             await messages_list.add_system(f"Using the persona above, follow these instructions: {topic}", index=len(messages_list) + 1)
             messages_list.can_reply = False
 
-            return await self.send_response(ctx, messages_list)
+            return await self.create_response(ctx, messages_list)
 
     async def get_discord_context(self, guild_id: int, channels: list):
         guild = self.bot.get_guild(guild_id)
@@ -70,8 +70,13 @@ class RandomMessageTask(MixinMeta):
     async def check_if_valid_for_random_message(self, guild: discord.Guild, last: discord.Message):
         if await self.bot.cog_disabled_in_guild(self, guild):
             return False
-        if not (await self.bot.ignored_channel_or_guild(last)):
+
+        try:
+            if not (await self.bot.ignored_channel_or_guild(last)):
+                return False
+        except Exception:
             return False
+
         if not await self.config.guild(guild).random_messages_enabled():
             return False
         if random.random() > await self.config.guild(guild).random_messages_percent():

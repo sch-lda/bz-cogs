@@ -33,6 +33,7 @@ DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS = [
     "image", "images", "picture", "pictures", "photo", "photos", "photograph", "photographs"]
 DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS = ["yourself", "you"]
 DEFAULT_REPLY_PERCENT = 1.0
+DEFAULT_MIN_MESSAGE_LENGTH = 1
 
 ### END DEFAULTS ###
 
@@ -55,18 +56,16 @@ YOUTUBE_VIDEO_ID_PATTERN = re.compile(
 SINGULAR_MENTION_PATTERN = re.compile(r"^<@!?&?(\d+)>$")
 
 
-# misc
-MIN_MESSAGE_LENGTH = 1
-MAX_MESSAGE_LENGTH = 8000  # in words
 OPENROUTER_URL = "https://openrouter.ai/api/"
-
-# image captioning
-IMAGE_UPLOAD_LIMIT = 2 * (1024 * 1024)  # 2 MB
+IMAGE_UPLOAD_LIMIT = 10 * (1024 * 1024)  # 10 MB
 
 
 # models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
     "gpt-4",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-0613",
     "gpt-3.5-turbo",
@@ -74,29 +73,73 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     "gpt-3.5-turbo-0613",
     "gpt-3.5-turbo-0125",
     "openai/gpt-4",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini",
+    "openai/gpt-4-turbo",
     "openai/gpt-4-1106-preview",
     "openai/gpt-4-0613",
     "openai/gpt-3.5-turbo",
     "openai/gpt-3.5-turbo-1106",
     "openai/gpt-3.5-turbo-0613",
-    "openai/gpt-3.5-turbo-0125"
+    "openai/gpt-3.5-turbo-0125",
+    "google/gemini-flash-1.5",
+    "google/gemini-pro-1.5",
+    "anthropic/claude-3-haiku",
+    "anthropic/claude-3-sonnet",
+    "anthropic/claude-3.5-sonnet",
+    "anthropic/claude-3-opus",
+    "anthropic/claude-3-haiku:beta",
+    "anthropic/claude-3-sonnet:beta",
+    "anthropic/claude-3-opus:beta",
+    "anthropic/claude-3.5-sonnet:beta"
 ]
 VISION_SUPPORTED_MODELS = [
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-4-turbo",
     "gpt-4-vision-preview",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini",
+    "openai/gpt-4-turbo",
     "openai/gpt-4-vision-preview",
-    "haotian-liu/llava-13b",
-    "nousresearch/nous-hermes-2-vision-7b"
+    "google/gemini-flash-1.5",
+    "google/gemini-pro-1.5",
+    "anthropic/claude-3-haiku",
+    "anthropic/claude-3-sonnet",
+    "anthropic/claude-3.5-sonnet",
+    "anthropic/claude-3-opus",
+    "anthropic/claude-3-haiku:beta",
+    "anthropic/claude-3-sonnet:beta",
+    "anthropic/claude-3-opus:beta",
+    "anthropic/claude-3.5-sonnet:beta"
 ]
 OTHER_MODELS_LIMITS = {
-    "gpt-3.5-turbo-1106": 12000,
+    "gemini-flash-1.5": 2797000,
+    "gemini-pro-1.5": 3998000,
+    "claude-3-haiku": 198000,
+    "claude-3-opus": 198000,
+    "claude-3-sonnet": 198000,
+    "claude-3.5-sonnet": 198000,
+    "claude-2.1": 198000,
     "gpt-4-1106-preview": 123000,
     "gpt-4-vision-preview": 123000,
+    "gpt-4-turbo": 123000,
+    "gpt-4-turbo-preview": 123000,
+    "gpt-4o": 123000,
+    "gpt-4o-mini": 123000,
+    "command-r-plus": 123000,
+    "phi-3-medium-128k-instruct": 123000,
+    "mistral-nemo": 123000,
+    "deepseek-coder": 123000,
     "claude-2": 98000,
     "claude-instant-v1": 98000,
+    "command-r": 98000,
+    "mixtral-8x22b": 60000,
+    "mixtral-8x22b-instruct": 60000,
+    "wizardlm-2-8x22b": 60000,
+    "zephyr-orpo-141b-a35b": 60000,
+    "wizardlm-2-7b": 31000,
     "dolphin-mixtral-8x7b": 31000,
-    "mistral-tiny": 31000,
-    "mistral-small": 31000,
-    "mistral-medium": 31000,
     "toppy-m-7b": 31000,
     "nous-capybara-34b": 31000,
     "stripedhyena-hessian-7b": 31000,
@@ -106,26 +149,27 @@ OTHER_MODELS_LIMITS = {
     "mixtral-8x7b-instruct": 31000,
     "mixtral-8x7b": 31000,
     "gemini-pro": 31000,
+    "mistral-7b-instruct": 31000,
+    "nous-hermes-2-mixtral-8x7b-dpo": 31000,
+    "nous-hermes-2-mixtral-8x7b-sft": 31000,
+    "dbrx-instruct": 31000,
+    "qwen-110b-chat": 31000,
+    "qwen-72b-chat": 31000,
+    "mistral-tiny": 28000,
+    "mistral-small": 28000,
+    "mistral-medium": 28000,
+    "mistral-large": 28000,
+    "soliloquy-l3": 21000,
+    "llama-3-lumimaid-8b": 21000,
+    "sonar-small-chat": 18000,
+    "sonar-medium-chat": 18000,
     "gemini-pro-vision": 15000,
-    "rwkv-5-world-3b": 9000,
-    "rwkv-5-3b-ai-town": 9000,
-    "noromaid-mixtral-8x7b-instruct": 7000,
-    "bagel-34b": 7000,
-    "pplx-7b-chat": 7000,
-    "noromaid-20b": 7000,
-    "palm-2-chat-bison": 7000,
-    "claude-v1": 7000,
-    "claude-1.2": 7000,
-    "claude-instant-1.0": 7000,
-    "codellama-34b-instruct": 6000,
-    "synthia-70b": 6000,
-    "mistral-7b-instruct": 6000,
-    "mistral-7b-openorca": 6000,
-    "mythalion-13b": 6000,
-    "xwin-lm-70b": 6000,
-    "goliath-120b": 6000,
-    "weaver": 6000,
-    "palm-2-codechat-bison": 6000,
-    "openchat-7b": 6000,
-    "remm-slerp-l2-13b": 5000
+    "gpt-3.5-turbo-1106": 12000,
+    "sonar-small-online": 8000,
+    "sonar-medium-online": 8000,
+    "gemma-2-9b-it": 7000,
+    "openchat-7b": 7000,
+    "cinematika-7b": 7000,
+    "gemma-7b-it": 7000,
+    "llama-3-8b-instruct": 7000,
 }

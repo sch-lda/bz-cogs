@@ -20,6 +20,16 @@ class TriggerSettings(MixinMeta):
         """
         pass
 
+    @trigger.command(name="minlength", aliases=["min_length"])
+    async def min_length(self, ctx: commands.Context, length: int):
+        """ Set the minimum length of messages that the bot will respond to"""
+        await self.config.guild(ctx.guild).messages_min_length.set(length)
+        embed = discord.Embed(
+            title="The minimum length is now:",
+            description=f"{length}",
+            color=await ctx.embed_color())
+        return await ctx.send(embed=embed)
+
     @trigger.command(name="ignore", aliases=["ignoreregex"])
     async def ignore(self, ctx: commands.Context, *, regex_pattern: Optional[str]):
         """ Messages matching this regex won't be replied to or seen, by the bot """
@@ -29,7 +39,7 @@ class TriggerSettings(MixinMeta):
             return await ctx.send("The ignore regex has been cleared.")
         try:
             self.ignore_regex[ctx.guild.id] = re.compile(regex_pattern)
-        except:
+        except Exception:
             return await ctx.send("Sorry, but that regex pattern seems to be invalid.")
         await self.config.guild(ctx.guild).ignore_regex.set(regex_pattern)
         embed = discord.Embed(
@@ -37,6 +47,33 @@ class TriggerSettings(MixinMeta):
             description=f"`{regex_pattern}`",
             color=await ctx.embed_color())
         await ctx.send(embed=embed)
+
+    @checks.is_owner()
+    @trigger.command(name="conversation_reply_percent")
+    async def conversation_reply_percent(self, ctx: commands.Context, percent: int):
+        """ Set a different percentage chance of the bot continuing to reply within `conversation_reply_time` time frame"""
+        if percent < 0 or percent > 100:
+            return await ctx.send("Please enter a number between 0 and 100")
+        await self.config.guild(ctx.guild).conversation_reply_percent.set(percent / 100)
+        embed = discord.Embed(
+            title="The conversation reply percent is now:",
+            description=f"{percent}%",
+            color=await ctx.embed_color())
+        return await ctx.send(embed=embed)
+
+    @trigger.command(name="conversation_reply_time")
+    async def conversation_reply_time(self, ctx: commands.Context, seconds: int):
+        """ Set the max time frame in seconds for the bot to have a `conversation_reply_percent` chance of replying to a message 
+            When `conversation_reply_time` have lapsed for the last bot message, `conversation_reply_percent` will not be used.
+        """
+        if seconds < 0:
+            return await ctx.send("Please enter a positive number")
+        await self.config.guild(ctx.guild).conversation_reply_time.set(seconds)
+        embed = discord.Embed(
+            title="The conversation reply time is now:",
+            description=f"{seconds} seconds",
+            color=await ctx.embed_color())
+        return await ctx.send(embed=embed)
 
     @trigger.command(name="reply_to_mentions", aliases=["mentions_replies"])
     @checks.is_owner()

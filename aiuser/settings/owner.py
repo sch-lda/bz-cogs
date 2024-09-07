@@ -66,7 +66,7 @@ class OwnerSettings(MixinMeta):
         if url == "openrouter":
             url = "https://openrouter.ai/api/v1/"
 
-        if not url or url in ["clear", "reset"]:
+        if not url or url in ["clear", "reset", "openai"]:
             await self.config.custom_openai_endpoint.set(None)
         else:
             await self.config.custom_openai_endpoint.set(url)
@@ -74,18 +74,18 @@ class OwnerSettings(MixinMeta):
         await self.initialize_openai_client()
 
         chat_model = "gpt-3.5-turbo"
-        image_model = "gpt-4-turbo"
+        image_model = "gpt-4o"
 
         if (is_using_openrouter_endpoint(self.openai_client)):
             chat_model = "openai/gpt-3.5-turbo"
-            image_model = "openai/gpt-4-turbo"
+            image_model = "openai/gpt-4o"
 
         embed = discord.Embed(
             title="Bot Custom OpenAI endpoint", color=await ctx.embed_color()
         )
         embed.add_field(
             name="🔄 Reset",
-            value="Per-server models have been set to use `gpt-3.5-turbo` for chat \n and `gpt-4-turbo` for LLM image scan mode.",
+            value="Per-server models have been set to use `gpt-3.5-turbo` for chat \n and `gpt-4o for LLM image scan mode.",
             inline=False,
         )
 

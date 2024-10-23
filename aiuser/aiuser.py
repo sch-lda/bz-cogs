@@ -217,7 +217,7 @@ class AIUser(
             )
 
         try:
-            await self.send_response(ctx)
+            await self.create_response(ctx)
         except Exception as e:
             await ctx.send(f"回复失败! {e}", ephemeral=True)
 

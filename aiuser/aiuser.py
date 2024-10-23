@@ -175,7 +175,7 @@ class AIUser(
         *,
         text: app_commands.Range[str, 1, 2000],
     ):
-        """与gpt-3.5-turbo交谈"""
+        """与gpt-4o-mini交谈"""
         await inter.response.defer()
 
         ctx = await commands.Context.from_interaction(inter)

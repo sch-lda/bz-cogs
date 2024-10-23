@@ -15,6 +15,14 @@ DEFAULT_RANDOM_PROMPTS = [
     "Talk about how you are currently ordering takeout. State the specific cuisine ordered, and any other details you'd like to the Discord channel.",
     "Make up a topic in the news. State that you just read about it in the news. Talk about that topic."
 ]
+DEFAULT_IMAGE_REQUEST_SD_GEN_PROMPT = """
+I want you to act as a Stable Diffusion Art Prompt Generator. The formula for a prompt is made of parts, the parts are indicated by brackets. The [Subject] is the person place or thing the image is focused on. [Emotions] is the emotional look the subject or scene might have. [Verb] is What the subject is doing, such as standing, jumping, working and other varied that match the subject. [Adjectives] like beautiful, rendered, realistic, tiny, colorful and other varied that match the subject. The [Environment] in which the subject is in, [Lighting] of the scene like moody, ambient, sunny, foggy and others that match the Environment and compliment the subject. [Photography type] like Polaroid, long exposure, monochrome, GoPro, fisheye, bokeh and others. And [Quality] like High definition, 4K, 8K, 64K UHD, SDR and other. The subject and environment should match and have the most emphasis.
+It is ok to omit one of the other formula parts. Each formula part should be less then four words.
+
+Here is a sample output: "Beautiful woman, contemplative and reflective, sitting on a bench, cozy sweater, autumn park with colorful leaves, soft overcast light, muted color photography style, 4K quality."
+
+Convert the below message to a Stable Diffusion Art Prompt.  The prompt should have no second person references, no line breaks, no delimiters, and be kept as concise as possible while still conveying a full scene.
+"""
 DEFAULT_REMOVE_PATTERNS = [
     r'^As an AI language model,?',
     r'^(User )?"?{botname}"? (said|says|respond(ed|s)|replie[ds])( to [^":]+)?:?',
@@ -34,19 +42,13 @@ DEFAULT_IMAGE_REQUEST_TRIGGER_WORDS = [
 DEFAULT_IMAGE_REQUEST_TRIGGER_SECOND_PERSON_WORDS = ["yourself", "you"]
 DEFAULT_REPLY_PERCENT = 1.0
 DEFAULT_MIN_MESSAGE_LENGTH = 1
+DEFAULT_IMAGE_UPLOAD_LIMIT = 10 * (1024 * 1024)  # 10 MB
 
 ### END DEFAULTS ###
 
 IMAGE_REQUEST_CHECK_PROMPT = "As an AI, named {botname}, you are tasked to analyze messages directed towards you. Your role is to identify whether each specific message is asking you to send a picture of yourself or not. Messages can be phrased in a variety of ways, so you should look for key contextual clues such as requests for images, photographs, selfies, or other synonyms, but make sure it's specifically asking for a picture of 'you'. If the message explicitly requests a picture of {botname}, you are to respond with 'True'. If the message doesn't solicit a picture of 'you', then respond with 'False'."
-IMAGE_REQUEST_SD_GEN_PROMPT = """
-I want you to act as a Stable Diffusion Art Prompt Generator. The formula for a prompt is made of parts, the parts are indicated by brackets. The [Subject] is the person place or thing the image is focused on. [Emotions] is the emotional look the subject or scene might have. [Verb] is What the subject is doing, such as standing, jumping, working and other varied that match the subject. [Adjectives] like beautiful, rendered, realistic, tiny, colorful and other varied that match the subject. The [Environment] in which the subject is in, [Lighting] of the scene like moody, ambient, sunny, foggy and others that match the Environment and compliment the subject. [Photography type] like Polaroid, long exposure, monochrome, GoPro, fisheye, bokeh and others. And [Quality] like High definition, 4K, 8K, 64K UHD, SDR and other. The subject and environment should match and have the most emphasis.
-It is ok to omit one of the other formula parts. Each formula part should be less then four words.
-
-Here is a sample output: "Beautiful woman, contemplative and reflective, sitting on a bench, cozy sweater, autumn park with colorful leaves, soft overcast light, muted color photography style, 4K quality."
-
-Convert the below message to a Stable Diffusion Art Prompt.  The prompt should have no second person references, no line breaks, no delimiters, and be kept as concise as possible while still conveying a full scene.
-"""
 IMAGE_REQUEST_REPLY_PROMPT = "You sent the picture above. Respond accordingly."
+IMAGE_REQUEST_AIHORDE_URL = "https://aihorde.net/api"
 
 # regex patterns
 URL_PATTERN = re.compile(r"(https?://\S+)")
@@ -57,7 +59,6 @@ SINGULAR_MENTION_PATTERN = re.compile(r"^<@!?&?(\d+)>$")
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/"
-IMAGE_UPLOAD_LIMIT = 10 * (1024 * 1024)  # 10 MB
 
 
 # models
@@ -91,7 +92,11 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     "anthropic/claude-3-haiku:beta",
     "anthropic/claude-3-sonnet:beta",
     "anthropic/claude-3-opus:beta",
-    "anthropic/claude-3.5-sonnet:beta"
+    "anthropic/claude-3.5-sonnet:beta",
+    "qwen/qwen-2.5-72b-instruct",
+    "mistralai/mistral-nemo",
+    "mistralai/mistral-7b-instruct",
+    "mistralai/mistral-large",
 ]
 VISION_SUPPORTED_MODELS = [
     "gpt-4o",
@@ -112,6 +117,10 @@ VISION_SUPPORTED_MODELS = [
     "anthropic/claude-3-sonnet:beta",
     "anthropic/claude-3-opus:beta",
     "anthropic/claude-3.5-sonnet:beta"
+    "qwen/qwen-2-vl-72b-instruct",
+    "qwen/qwen-2.5-72b-instruct",
+    "mistralai/pixtral-12b",
+    "mistralai/pixtral-12b:free"
 ]
 OTHER_MODELS_LIMITS = {
     "gemini-flash-1.5": 2797000,
@@ -131,6 +140,7 @@ OTHER_MODELS_LIMITS = {
     "phi-3-medium-128k-instruct": 123000,
     "mistral-nemo": 123000,
     "deepseek-coder": 123000,
+    "qwen/qwen-2-vl-72b-instruct": 123000,
     "claude-2": 98000,
     "claude-instant-v1": 98000,
     "command-r": 98000,

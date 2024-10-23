@@ -191,10 +191,6 @@ class MessagesList:
 
         await self._process_past_messages(past_messages, max_seconds_gap)
 
-        if users and not await self.config.guild(self.guild).optin_disable_embed():
-            if (random.random() <= 0.33) or (len(users) > 3):
-                await self._send_optin_embed(users)
-
     async def _get_past_messages(self, limit, start_time):
         return [
             message
@@ -233,17 +229,6 @@ class MessagesList:
             else:
                 await self.add_msg(past_messages[i])
                 break
-
-    async def _send_optin_embed(self, users):
-		return
-        users = ", ".join([user.mention for user in users])
-        embed = discord.Embed(
-            title=OPTIN_EMBED_TITLE,
-            color=await self.bot.get_embed_color(self.init_message),
-        )
-        view = OptView(self.config)
-        embed.description = f"{users}\nPlease select whether you want to opt into your Discord messages being sent to OpenAI or an external party, as part of this bot.\nThis will allow the bot to reply to your messages or use your messages.\nThis message will disappear if all users in the chat have made a choice."
-        await self.init_message.channel.send(embed=embed, view=view)
 
     def get_json(self):
         return [asdict(message) for message in self.messages]

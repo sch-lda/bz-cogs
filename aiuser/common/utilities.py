@@ -92,7 +92,7 @@ def contains_youtube_link(content):
 
 
 def is_using_openai_endpoint(client: AsyncOpenAI):
-    return str(client.base_url).startswith("https://api.gptgod.online/")
+    return str(client.base_url).startswith("https://gptoneapi.cc2077.site/")
 
 
 def is_using_openrouter_endpoint(client: AsyncOpenAI):

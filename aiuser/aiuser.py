@@ -200,8 +200,9 @@ class AIUser(
 
         try:
             await self.create_response(ctx)
-        except Exception:
-            await ctx.send("回复失败!", ephemeral=True)
+        except Exception as e:
+
+            await ctx.send(f"回复失败! {e}", ephemeral=True)
 
     @commands.command()
     async def chat(self, ctx: commands.Context):
@@ -217,8 +218,8 @@ class AIUser(
 
         try:
             await self.send_response(ctx)
-        except:
-            await ctx.send("回复失败!", ephemeral=True)
+        except Exception as e:
+            await ctx.send(f"回复失败! {e}", ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
